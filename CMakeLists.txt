@@ -8,6 +8,3 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 file(GLOB_RECURSE SOURCES src/*.cxx)
 add_library(json ${SOURCES})
 target_include_directories(json PUBLIC inc)
-
-add_executable(main main.cxx)
-target_link_libraries(main PRIVATE json)
