@@ -227,8 +227,6 @@ void to_json(json::Node &node, const std::optional<T> &value);
 template<typename T>
 bool from_json(const json::Node &node, std::vector<T> &value)
 {
-    value.clear();
-
     if (!json::IsArray(node))
         return false;
 
@@ -286,8 +284,6 @@ void to_json(json::Node &node, const std::array<T, N> &value)
 template<typename T>
 bool from_json(const json::Node &node, std::map<std::string, T> &value)
 {
-    value.clear();
-
     if (!json::IsObject(node))
         return false;
 
@@ -320,7 +316,13 @@ bool from_json(const json::Node &node, std::optional<T> &value)
         return true;
     }
 
-    return from_json(node, value.value());
+    if (T element; from_json(node, element))
+    {
+        value = std::move(element);
+        return true;
+    }
+
+    return false;
 }
 
 template<typename T>
