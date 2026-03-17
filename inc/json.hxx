@@ -365,6 +365,9 @@ void to_json(json::Node &node, const std::optional<T> &value)
 }
 
 template<typename T>
+bool from_json_opt(const json::Node &node, T &value, T default_value = {});
+
+template<typename T>
 bool from_json_opt(const json::Node &node, T &value, T default_value)
 {
     if (std::optional<T> opt; from_json(node, opt))
