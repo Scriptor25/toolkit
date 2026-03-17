@@ -2,6 +2,7 @@
 
 #include <map>
 #include <optional>
+#include <set>
 #include <string>
 #include <variant>
 #include <vector>
@@ -213,6 +214,12 @@ template<typename T, std::size_t N>
 void to_json(json::Node &node, const std::array<T, N> &value);
 
 template<typename T>
+bool from_json(const json::Node &node, std::set<T> &value);
+
+template<typename T>
+void to_json(json::Node &node, const std::set<T> &value);
+
+template<typename T>
 bool from_json(const json::Node &node, std::map<std::string, T> &value);
 
 template<typename T>
@@ -282,6 +289,29 @@ void to_json(json::Node &node, const std::array<T, N> &value)
 }
 
 template<typename T>
+bool from_json(const json::Node &node, std::set<T> &value)
+{
+    if (std::vector<T> vec; from_json(node, vec))
+    {
+        value = { std::make_move_iterator(vec.begin()), std::make_move_iterator(vec.end()) };
+        return true;
+    }
+
+    return false;
+}
+
+template<typename T>
+void to_json(json::Node &node, const std::set<T> &value)
+{
+    json::ArrayNode array_node(value.size());
+
+    for (auto s = value.begin(), d = array_node.begin(); s != value.end() && d != array_node.end(); ++s, ++d)
+        to_json(*d, *s);
+
+    node = std::move(array_node);
+}
+
+template<typename T>
 bool from_json(const json::Node &node, std::map<std::string, T> &value)
 {
     if (!json::IsObject(node))
@@ -332,6 +362,18 @@ void to_json(json::Node &node, const std::optional<T> &value)
         return to_json(node, value.value());
 
     node = {};
+}
+
+template<typename T>
+bool from_json_opt(const json::Node &node, T &value, T default_value)
+{
+    if (std::optional<T> opt; from_json(node, opt))
+    {
+        value = std::move(opt.value_or(std::move(default_value)));
+        return true;
+    }
+
+    return false;
 }
 
 template<typename T>
