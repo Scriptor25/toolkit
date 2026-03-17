@@ -305,8 +305,10 @@ void to_json(json::Node &node, const std::set<T> &value)
 {
     json::ArrayNode array_node(value.size());
 
-    for (auto s = value.begin(), d = array_node.begin(); s != value.end() && d != array_node.end(); ++s, ++d)
-        to_json(*d, *s);
+    auto s = value.begin();
+    auto d = array_node.begin();
+    while (s != value.end() && d != array_node.end())
+        to_json(*d++, *s++);
 
     node = std::move(array_node);
 }
