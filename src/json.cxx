@@ -1,9 +1,9 @@
 #include <iomanip>
-
-#include <json.hxx>
-#include <parser.hxx>
-#include <utf8.hxx>
 #include <variant>
+
+#include <json/json.hxx>
+#include <json/parser.hxx>
+#include <json/utf8.hxx>
 
 enum json_format
 {
@@ -86,26 +86,6 @@ bool json::Node::IsObject() const
     return std::holds_alternative<std::map<std::string, Node>>(Value);
 }
 
-std::monostate &json::Node::GetUndefined()
-{
-    return std::get<std::monostate>(Value);
-}
-
-const std::monostate &json::Node::GetUndefined() const
-{
-    return std::get<std::monostate>(Value);
-}
-
-std::nullptr_t &json::Node::GetNull()
-{
-    return std::get<std::nullptr_t>(Value);
-}
-
-const std::nullptr_t &json::Node::GetNull() const
-{
-    return std::get<std::nullptr_t>(Value);
-}
-
 bool &json::Node::GetBoolean()
 {
     return std::get<bool>(Value);
@@ -158,7 +138,8 @@ const std::map<std::string, json::Node> &json::Node::GetObject() const
 
 std::ostream &json::Node::Print(std::ostream &stream) const
 {
-    struct {
+    struct
+    {
         void operator()(std::monostate) const
         {
             stream << "<undefined>";
@@ -307,7 +288,7 @@ std::ostream &json::Node::Print(std::ostream &stream) const
         };
 
         std::ostream &stream;
-    } visitor { stream };
+    } visitor{ stream };
 
     std::visit(visitor, Value);
 
@@ -355,14 +336,17 @@ std::size_t json::Node::size() const
     return GetObject().size();
 }
 
-json::Node &json::Node::operator[](std::size_t index)
+json::Node &json::Node::operator[](const std::size_t index)
 {
     return GetArray()[index];
 }
 
-const json::Node &json::Node::operator[](std::size_t index) const
+json::Node json::Node::operator[](const std::size_t index) const
 {
-    return GetArray()[index];
+    if (IsArray())
+        if (auto &value = GetArray(); index < value.size())
+            return value[index];
+    return {};
 }
 
 json::Node &json::Node::operator[](const std::string &key)
@@ -372,9 +356,9 @@ json::Node &json::Node::operator[](const std::string &key)
 
 json::Node json::Node::operator[](const std::string &key) const
 {
-    auto &map = GetObject();
-    if (map.contains(key))
-        return map.at(key);
+    if (IsObject())
+        if (auto &value = GetObject(); value.contains(key))
+            return value.at(key);
     return {};
 }
 

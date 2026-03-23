@@ -2,7 +2,7 @@
 
 #include <istream>
 
-#include <json.hxx>
+#include <json/json.hxx>
 
 namespace json
 {

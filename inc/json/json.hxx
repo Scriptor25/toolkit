@@ -29,7 +29,8 @@ namespace json
             using entry_t = std::pair<std::string, T &>;
 
             iterator_base(V it, std::size_t idx)
-                : it(it), idx(idx)
+                : it(it),
+                  idx(idx)
             {
             }
 
@@ -45,20 +46,25 @@ namespace json
 
             entry_t operator*() const
             {
-                return std::visit([&](auto &it) -> entry_t
-                {
-                    using I = std::decay_t<decltype(it)>;
-
-                    if constexpr (std::is_same_v<I, V>)
-                        return { std::to_string(idx), *it };
-                    else
-                        return { it->first, it->second };
-                }, it);
+                return std::visit(
+                    [&]<typename I>(I &i) -> entry_t
+                    {
+                        if constexpr (std::is_same_v<I, V>)
+                            return { std::to_string(idx), *i };
+                        else
+                            return { i->first, i->second };
+                    },
+                    it);
             }
 
             iterator_base &operator++()
             {
-                std::visit([](auto &it) { ++it; }, it);
+                std::visit(
+                    [](auto &it)
+                    {
+                        ++it;
+                    },
+                    it);
 
                 if (std::holds_alternative<V>(it))
                     ++idx;
@@ -70,60 +76,60 @@ namespace json
             std::size_t idx{};
         };
 
-        using iterator = iterator_base<Node, std::vector<Node>::iterator, std::map<std::string, Node>::iterator>;
-        using const_iterator = iterator_base<const Node, std::vector<Node>::const_iterator, std::map<std::string, Node>::const_iterator>;
+        using iterator = iterator_base<
+            Node,
+            std::vector<Node>::iterator,
+            std::map<std::string, Node>::iterator>;
+        using const_iterator = iterator_base<
+            const Node,
+            std::vector<Node>::const_iterator,
+            std::map<std::string, Node>::const_iterator>;
 
         Node() = default;
 
         Node(NodeValue &&value);
         Node(const NodeValue &value);
 
-        bool IsUndefined() const;
-        bool IsNull() const;
-        bool IsBoolean() const;
-        bool IsNumber() const;
-        bool IsString() const;
-        bool IsArray() const;
-        bool IsObject() const;
-        
-        std::monostate &GetUndefined();
-        const std::monostate &GetUndefined() const;
-        
-        std::nullptr_t &GetNull();
-        const std::nullptr_t &GetNull() const;
-        
+        [[nodiscard]] bool IsUndefined() const;
+        [[nodiscard]] bool IsNull() const;
+        [[nodiscard]] bool IsBoolean() const;
+        [[nodiscard]] bool IsNumber() const;
+        [[nodiscard]] bool IsString() const;
+        [[nodiscard]] bool IsArray() const;
+        [[nodiscard]] bool IsObject() const;
+
         bool &GetBoolean();
-        const bool &GetBoolean() const;
-        
+        [[nodiscard]] const bool &GetBoolean() const;
+
         long double &GetNumber();
-        const long double &GetNumber() const;
-        
+        [[nodiscard]] const long double &GetNumber() const;
+
         std::string &GetString();
-        const std::string &GetString() const;
-        
+        [[nodiscard]] const std::string &GetString() const;
+
         std::vector<Node> &GetArray();
-        const std::vector<Node> &GetArray() const;
+        [[nodiscard]] const std::vector<Node> &GetArray() const;
 
         std::map<std::string, Node> &GetObject();
-        const std::map<std::string, Node> &GetObject() const;
+        [[nodiscard]] const std::map<std::string, Node> &GetObject() const;
 
         std::ostream &Print(std::ostream &stream) const;
-        
+
         iterator begin();
         iterator end();
 
-        const_iterator begin() const;
-        const_iterator end() const;
+        [[nodiscard]] const_iterator begin() const;
+        [[nodiscard]] const_iterator end() const;
 
-        std::size_t size() const;
+        [[nodiscard]] std::size_t size() const;
 
         Node &operator[](std::size_t index);
-        const Node &operator[](std::size_t index) const;
-        
+        Node operator[](std::size_t index) const;
+
         Node &operator[](const std::string &key);
         Node operator[](const std::string &key) const;
 
-        NodeValue Value;
+        NodeValue Value{};
     };
 
     std::ostream &compact(std::ostream &stream);

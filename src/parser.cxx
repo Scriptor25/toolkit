@@ -1,6 +1,6 @@
-#include <json.hxx>
-#include <parser.hxx>
-#include <utf8.hxx>
+#include <json/json.hxx>
+#include <json/parser.hxx>
+#include <json/utf8.hxx>
 
 json::Parser::Parser(std::istream &stream)
     : m_Stream(stream),
