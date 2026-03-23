@@ -302,27 +302,19 @@ std::ostream &json::ArrayNode::Print(std::ostream &stream) const
     {
         stream << '[';
         if (Elements.size() > 1)
-        {
             stream << '\n';
-        }
         depth++;
         for (auto it = Elements.begin(); it != Elements.end(); ++it)
         {
             if (it != Elements.begin())
-            {
                 stream << ',' << '\n';
-            }
             if (Elements.size() > 1)
-            {
                 stream << depth_space;
-            }
             stream << *it;
         }
         depth--;
         if (Elements.size() > 1)
-        {
             stream << '\n' << depth_space;
-        }
         return stream << ']';
     }
 
@@ -334,9 +326,7 @@ std::ostream &json::ArrayNode::Print(std::ostream &stream) const
         for (auto it = Elements.begin(); it != Elements.end(); ++it)
         {
             if (it != Elements.begin())
-            {
                 stream << ',';
-            }
             stream << *it;
         }
         depth--;
@@ -422,18 +412,20 @@ std::ostream &json::ObjectNode::Print(std::ostream &stream) const
     {
     case json_format::pretty:
     {
-        stream << '{' << '\n';
+        stream << '{';
+        if (!Elements.empty())
+            stream << '\n';
         depth++;
         for (auto it = Elements.begin(); it != Elements.end(); ++it)
         {
             if (it != Elements.begin())
-            {
                 stream << ',' << '\n';
-            }
             stream << depth_space << StringNode(it->first) << ": " << it->second;
         }
         depth--;
-        return stream << '\n' << depth_space << '}';
+        if (!Elements.empty())
+            stream << '\n' << depth_space;
+        return stream << '}';
     }
 
     case json_format::compact:
@@ -444,9 +436,7 @@ std::ostream &json::ObjectNode::Print(std::ostream &stream) const
         for (auto it = Elements.begin(); it != Elements.end(); ++it)
         {
             if (it != Elements.begin())
-            {
                 stream << ',';
-            }
             stream << StringNode(it->first) << ':' << it->second;
         }
         depth--;
