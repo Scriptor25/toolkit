@@ -64,7 +64,7 @@ json::Node json::Parser::ParseNull()
         return {};
     if (!Skip('l'))
         return {};
-    return NullNode();
+    return { nullptr };
 }
 
 json::Node json::Parser::ParseBoolean()
@@ -79,7 +79,7 @@ json::Node json::Parser::ParseBoolean()
             return {};
         if (!Skip('e'))
             return {};
-        return BooleanNode(false);
+        return { false };
     }
 
     if (!Skip('t'))
@@ -90,7 +90,7 @@ json::Node json::Parser::ParseBoolean()
         return {};
     if (!Skip('e'))
         return {};
-    return BooleanNode(true);
+    return { true };
 }
 
 json::Node json::Parser::ParseNumber()
@@ -141,9 +141,7 @@ json::Node json::Parser::ParseNumber()
         while ('0' <= m_Buffer && m_Buffer <= '9');
     }
 
-    const auto value = std::stold(buffer, nullptr);
-
-    return NumberNode(value);
+    return { std::stold(buffer, nullptr) };
 }
 
 json::Node json::Parser::ParseString()
@@ -206,7 +204,7 @@ json::Node json::Parser::ParseString()
         }
     }
 
-    return StringNode(std::move(value));
+    return { std::move(value) };
 }
 
 json::Node json::Parser::ParseArray()
@@ -223,7 +221,7 @@ json::Node json::Parser::ParseArray()
         do
         {
             auto element = Parse();
-            if (IsUndefined(element))
+            if (element.IsUndefined())
                 return {};
 
             elements.push_back(std::move(element));
@@ -234,7 +232,7 @@ json::Node json::Parser::ParseArray()
             return {};
     }
 
-    return ArrayNode(std::move(elements));
+    return { std::move(elements) };
 }
 
 json::Node json::Parser::ParseObject()
@@ -253,7 +251,7 @@ json::Node json::Parser::ParseObject()
             SkipWhitespace();
 
             const auto key = ParseString();
-            if (IsUndefined(key))
+            if (key.IsUndefined())
                 return {};
 
             SkipWhitespace();
@@ -262,10 +260,10 @@ json::Node json::Parser::ParseObject()
                 return {};
 
             auto value = Parse();
-            if (IsUndefined(value))
+            if (value.IsUndefined())
                 return {};
 
-            elements[AsString(key)] = std::move(value);
+            elements[key.GetString()] = std::move(value);
         }
         while (Skip(','));
 
@@ -273,7 +271,7 @@ json::Node json::Parser::ParseObject()
             return {};
     }
 
-    return ObjectNode(std::move(elements));
+    return { std::move(elements) };
 }
 
 void json::Parser::Get()

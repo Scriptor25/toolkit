@@ -1,9 +1,9 @@
-#include <cstdlib>
 #include <iomanip>
 
 #include <json.hxx>
 #include <parser.hxx>
 #include <utf8.hxx>
+#include <variant>
 
 enum json_format
 {
@@ -41,503 +41,341 @@ static std::ostream &depth_space(std::ostream &stream)
     return stream;
 }
 
-json::NullNode::NullNode(Node &&node)
+json::Node::Node(NodeValue &&value)
+    : Value(std::forward<NodeValue>(value))
 {
-    if (!IsNull(node))
-        throw std::runtime_error("error");
-
-    node = {};
 }
 
-json::NullNode::NullNode(const Node &node)
-{
-    if (!IsNull(node))
-        throw std::runtime_error("error");
-}
-
-std::ostream &json::NullNode::Print(std::ostream &stream) const
-{
-    return stream << "null";
-}
-
-json::BooleanNode::BooleanNode(const bool value)
+json::Node::Node(const NodeValue &value)
     : Value(value)
 {
 }
 
-json::BooleanNode::BooleanNode(Node &&node)
+bool json::Node::IsUndefined() const
 {
-    if (!IsBoolean(node))
-        throw std::runtime_error("error");
-
-    Value = AsBoolean(node).Value;
-    node = {};
+    return std::holds_alternative<std::monostate>(Value);
 }
 
-json::BooleanNode::BooleanNode(const Node &node)
+bool json::Node::IsNull() const
 {
-    if (!IsBoolean(node))
-        throw std::runtime_error("error");
-
-    Value = AsBoolean(node).Value;
+    return std::holds_alternative<std::nullptr_t>(Value);
 }
 
-json::BooleanNode::operator bool &()
+bool json::Node::IsBoolean() const
 {
-    return Value;
+    return std::holds_alternative<bool>(Value);
 }
 
-json::BooleanNode::operator bool() const
+bool json::Node::IsNumber() const
 {
-    return Value;
+    return std::holds_alternative<long double>(Value);
 }
 
-std::ostream &json::BooleanNode::Print(std::ostream &stream) const
+bool json::Node::IsString() const
 {
-    return stream << (Value ? "true" : "false");
+    return std::holds_alternative<std::string>(Value);
 }
 
-json::NumberNode::NumberNode(const long double value)
-    : Value(value)
+bool json::Node::IsArray() const
 {
+    return std::holds_alternative<std::vector<Node>>(Value);
 }
 
-json::NumberNode::NumberNode(Node &&node)
+bool json::Node::IsObject() const
 {
-    if (!IsNumber(node))
-        throw std::runtime_error("error");
-
-    Value = AsNumber(node).Value;
-    node = {};
+    return std::holds_alternative<std::map<std::string, Node>>(Value);
 }
 
-json::NumberNode::NumberNode(const Node &node)
+std::monostate &json::Node::GetUndefined()
 {
-    if (!IsNumber(node))
-        throw std::runtime_error("error");
-
-    Value = AsNumber(node).Value;
+    return std::get<std::monostate>(Value);
 }
 
-json::NumberNode::operator long double &()
+const std::monostate &json::Node::GetUndefined() const
 {
-    return Value;
+    return std::get<std::monostate>(Value);
 }
 
-json::NumberNode::operator long double() const
+std::nullptr_t &json::Node::GetNull()
 {
-    return Value;
+    return std::get<std::nullptr_t>(Value);
 }
 
-std::ostream &json::NumberNode::Print(std::ostream &stream) const
+const std::nullptr_t &json::Node::GetNull() const
 {
-    return stream << std::scientific << Value;
+    return std::get<std::nullptr_t>(Value);
 }
 
-json::StringNode::StringNode(const char *value)
-    : Value(value)
+bool &json::Node::GetBoolean()
 {
+    return std::get<bool>(Value);
 }
 
-json::StringNode::StringNode(std::string &&value)
-    : Value(std::move(value))
+const bool &json::Node::GetBoolean() const
 {
+    return std::get<bool>(Value);
 }
 
-json::StringNode::StringNode(const std::string &value)
-    : Value(value)
+long double &json::Node::GetNumber()
 {
+    return std::get<long double>(Value);
 }
 
-json::StringNode::StringNode(Node &&node)
+const long double &json::Node::GetNumber() const
 {
-    if (!IsString(node))
-        throw std::runtime_error("error");
-
-    Value = std::move(AsString(node).Value);
-    node = {};
+    return std::get<long double>(Value);
 }
 
-json::StringNode::StringNode(const Node &node)
+std::string &json::Node::GetString()
 {
-    if (!IsString(node))
-        throw std::runtime_error("error");
-
-    Value = AsString(node).Value;
+    return std::get<std::string>(Value);
 }
 
-json::StringNode::operator std::string &()
+const std::string &json::Node::GetString() const
 {
-    return Value;
+    return std::get<std::string>(Value);
 }
 
-json::StringNode::operator const std::string &() const
+std::vector<json::Node> &json::Node::GetArray()
 {
-    return Value;
+    return std::get<std::vector<Node>>(Value);
 }
 
-std::ostream &json::StringNode::Print(std::ostream &stream) const
+const std::vector<json::Node> &json::Node::GetArray() const
 {
-    stream << '"';
+    return std::get<std::vector<Node>>(Value);
+}
 
-    for (auto i = Value.begin(); i != Value.end();)
-        switch (const auto c = utf8::decode(i, Value.end()))
+std::map<std::string, json::Node> &json::Node::GetObject()
+{
+    return std::get<std::map<std::string, Node>>(Value);
+}
+
+const std::map<std::string, json::Node> &json::Node::GetObject() const
+{
+    return std::get<std::map<std::string, Node>>(Value);
+}
+
+std::ostream &json::Node::Print(std::ostream &stream) const
+{
+    struct {
+        void operator()(std::monostate) const
         {
-        case '"':
-            stream << "\\\"";
-            break;
-        case '\\':
-            stream << "\\\\";
-            break;
-        case '\b':
-            stream << "\\b";
-            break;
-        case '\f':
-            stream << "\\f";
-            break;
-        case '\n':
-            stream << "\\n";
-            break;
-        case '\r':
-            stream << "\\r";
-            break;
-        case '\t':
-            stream << "\\t";
-            break;
-        default:
-            if (0x20 <= c && c < 0x7F)
-                stream << static_cast<char>(c);
-            else
-                stream << "\\u" << std::hex << std::setw(4) << std::setfill('0') << static_cast<int>(c);
-            break;
-        }
+            stream << "<undefined>";
+        };
 
-    return stream << '"';
-}
-
-json::ArrayNode::ArrayNode(const std::size_t count)
-    : Elements(count)
-{
-}
-
-json::ArrayNode::ArrayNode(std::vector<Node> &&elements)
-    : Elements(std::move(elements))
-{
-}
-
-json::ArrayNode::ArrayNode(const std::vector<Node> &elements)
-    : Elements(elements)
-{
-}
-
-json::ArrayNode::ArrayNode(Node &&node)
-{
-    if (!IsArray(node))
-        throw std::runtime_error("error");
-
-    Elements = std::move(AsArray(node).Elements);
-    node = {};
-}
-
-json::ArrayNode::ArrayNode(const Node &node)
-{
-    if (!IsArray(node))
-        throw std::runtime_error("error");
-
-    Elements = AsArray(node).Elements;
-}
-
-json::ArrayNode::operator std::vector<Node> &()
-{
-    return Elements;
-}
-
-json::ArrayNode::operator const std::vector<Node> &() const
-{
-    return Elements;
-}
-
-std::vector<json::Node>::iterator json::ArrayNode::begin()
-{
-    return Elements.begin();
-}
-
-std::vector<json::Node>::iterator json::ArrayNode::end()
-{
-    return Elements.end();
-}
-
-std::vector<json::Node>::const_iterator json::ArrayNode::begin() const
-{
-    return Elements.begin();
-}
-
-std::vector<json::Node>::const_iterator json::ArrayNode::end() const
-{
-    return Elements.end();
-}
-
-std::size_t json::ArrayNode::size() const
-{
-    return Elements.size();
-}
-
-json::Node &json::ArrayNode::operator[](const std::size_t index)
-{
-    return Elements[index];
-}
-
-const json::Node &json::ArrayNode::operator[](const std::size_t index) const
-{
-    return Elements[index];
-}
-
-std::ostream &json::ArrayNode::Print(std::ostream &stream) const
-{
-    auto &[format, depth] = get_json_context(stream);
-
-    switch (format)
-    {
-    case json_format::pretty:
-    {
-        stream << '[';
-        if (Elements.size() > 1)
-            stream << '\n';
-        depth++;
-        for (auto it = Elements.begin(); it != Elements.end(); ++it)
+        void operator()(std::nullptr_t) const
         {
-            if (it != Elements.begin())
-                stream << ',' << '\n';
-            if (Elements.size() > 1)
-                stream << depth_space;
-            stream << *it;
-        }
-        depth--;
-        if (Elements.size() > 1)
-            stream << '\n' << depth_space;
-        return stream << ']';
-    }
+            stream << "null";
+        };
 
-    case json_format::compact:
-    default:
-    {
-        stream << '[';
-        depth++;
-        for (auto it = Elements.begin(); it != Elements.end(); ++it)
+        void operator()(const bool value) const
         {
-            if (it != Elements.begin())
-                stream << ',';
-            stream << *it;
-        }
-        depth--;
-        return stream << ']';
+            stream << (value ? "true" : "false");
+        };
+
+        void operator()(const long double value) const
+        {
+            stream << std::scientific << value;
+        };
+
+        void operator()(const std::string &value) const
+        {
+            stream << '"';
+
+            for (auto i = value.begin(); i != value.end();)
+                switch (const auto c = utf8::decode(i, value.end()))
+                {
+                case '"':
+                    stream << "\\\"";
+                    break;
+                case '\\':
+                    stream << "\\\\";
+                    break;
+                case '\b':
+                    stream << "\\b";
+                    break;
+                case '\f':
+                    stream << "\\f";
+                    break;
+                case '\n':
+                    stream << "\\n";
+                    break;
+                case '\r':
+                    stream << "\\r";
+                    break;
+                case '\t':
+                    stream << "\\t";
+                    break;
+                default:
+                    if (0x20 <= c && c < 0x7F)
+                        stream << static_cast<char>(c);
+                    else
+                        stream << "\\u" << std::hex << std::setw(4) << std::setfill('0') << static_cast<int>(c);
+                    break;
+                }
+
+            stream << '"';
+        };
+
+        void operator()(const std::vector<Node> &value) const
+        {
+            auto &[format, depth] = get_json_context(stream);
+
+            switch (format)
+            {
+            case json_format::pretty:
+            {
+                stream << '[';
+                if (value.size() > 1)
+                    stream << '\n';
+                depth++;
+                for (auto it = value.begin(); it != value.end(); ++it)
+                {
+                    if (it != value.begin())
+                        stream << ',' << '\n';
+                    if (value.size() > 1)
+                        stream << depth_space;
+                    stream << *it;
+                }
+                depth--;
+                if (value.size() > 1)
+                    stream << '\n' << depth_space;
+                stream << ']';
+                break;
+            }
+
+            case json_format::compact:
+            default:
+            {
+                stream << '[';
+                depth++;
+                for (auto it = value.begin(); it != value.end(); ++it)
+                {
+                    if (it != value.begin())
+                        stream << ',';
+                    stream << *it;
+                }
+                depth--;
+                stream << ']';
+                break;
+            }
+            }
+        };
+
+        void operator()(const std::map<std::string, Node> &value) const
+        {
+            auto &[format, depth] = get_json_context(stream);
+
+            switch (format)
+            {
+            case json_format::pretty:
+            {
+                stream << '{';
+                if (!value.empty())
+                    stream << '\n';
+                depth++;
+                for (auto it = value.begin(); it != value.end(); ++it)
+                {
+                    if (it != value.begin())
+                        stream << ',' << '\n';
+                    stream << depth_space << Node(it->first) << ": " << it->second;
+                }
+                depth--;
+                if (!value.empty())
+                    stream << '\n' << depth_space;
+                stream << '}';
+                break;
+            }
+
+            case json_format::compact:
+            default:
+            {
+                stream << '{';
+                depth++;
+                for (auto it = value.begin(); it != value.end(); ++it)
+                {
+                    if (it != value.begin())
+                        stream << ',';
+                    stream << Node(it->first) << ':' << it->second;
+                }
+                depth--;
+                stream << '}';
+                break;
+            }
+            }
+        };
+
+        std::ostream &stream;
+    } visitor { stream };
+
+    std::visit(visitor, Value);
+
+    return stream;
+}
+
+json::Node::iterator json::Node::begin()
+{
+    if (IsArray())
+        return { GetArray().begin(), 0 };
+    return { GetObject().begin() };
+}
+
+json::Node::iterator json::Node::end()
+{
+    if (IsArray())
+    {
+        auto &array = GetArray();
+        return { array.end(), array.size() };
     }
+    return { GetObject().end() };
+}
+
+json::Node::const_iterator json::Node::begin() const
+{
+    if (IsArray())
+        return { GetArray().begin(), 0 };
+    return { GetObject().begin() };
+}
+
+json::Node::const_iterator json::Node::end() const
+{
+    if (IsArray())
+    {
+        auto &array = GetArray();
+        return { array.end(), array.size() };
     }
+    return { GetObject().end() };
 }
 
-json::ObjectNode::ObjectNode(std::map<std::string, Node> &&elements)
-    : Elements(std::move(elements))
+std::size_t json::Node::size() const
 {
+    if (IsArray())
+        return GetArray().size();
+    return GetObject().size();
 }
 
-json::ObjectNode::ObjectNode(const std::map<std::string, Node> &elements)
-    : Elements(elements)
+json::Node &json::Node::operator[](std::size_t index)
 {
+    return GetArray()[index];
 }
 
-json::ObjectNode::ObjectNode(Node &&node)
+const json::Node &json::Node::operator[](std::size_t index) const
 {
-    if (!IsObject(node))
-        throw std::runtime_error("error");
-
-    Elements = std::move(AsObject(node).Elements);
-    node = {};
+    return GetArray()[index];
 }
 
-json::ObjectNode::ObjectNode(const Node &node)
+json::Node &json::Node::operator[](const std::string &key)
 {
-    if (!IsObject(node))
-        throw std::runtime_error("error");
-
-    Elements = AsObject(node).Elements;
+    return GetObject()[key];
 }
 
-json::ObjectNode::operator std::map<std::string, Node> &()
+json::Node json::Node::operator[](const std::string &key) const
 {
-    return Elements;
-}
-
-json::ObjectNode::operator const std::map<std::string, Node> &() const
-{
-    return Elements;
-}
-
-std::map<std::string, json::Node>::iterator json::ObjectNode::begin()
-{
-    return Elements.begin();
-}
-
-std::map<std::string, json::Node>::iterator json::ObjectNode::end()
-{
-    return Elements.end();
-}
-
-std::map<std::string, json::Node>::const_iterator json::ObjectNode::begin() const
-{
-    return Elements.begin();
-}
-
-std::map<std::string, json::Node>::const_iterator json::ObjectNode::end() const
-{
-    return Elements.end();
-}
-
-json::Node &json::ObjectNode::operator[](const std::string &key)
-{
-    return Elements[key];
-}
-
-json::Node json::ObjectNode::operator[](const std::string &key) const
-{
-    if (Elements.contains(key))
-        return Elements.at(key);
+    auto &map = GetObject();
+    if (map.contains(key))
+        return map.at(key);
     return {};
-}
-
-std::ostream &json::ObjectNode::Print(std::ostream &stream) const
-{
-    auto &[format, depth] = get_json_context(stream);
-
-    switch (format)
-    {
-    case json_format::pretty:
-    {
-        stream << '{';
-        if (!Elements.empty())
-            stream << '\n';
-        depth++;
-        for (auto it = Elements.begin(); it != Elements.end(); ++it)
-        {
-            if (it != Elements.begin())
-                stream << ',' << '\n';
-            stream << depth_space << StringNode(it->first) << ": " << it->second;
-        }
-        depth--;
-        if (!Elements.empty())
-            stream << '\n' << depth_space;
-        return stream << '}';
-    }
-
-    case json_format::compact:
-    default:
-    {
-        stream << '{';
-        depth++;
-        for (auto it = Elements.begin(); it != Elements.end(); ++it)
-        {
-            if (it != Elements.begin())
-                stream << ',';
-            stream << StringNode(it->first) << ':' << it->second;
-        }
-        depth--;
-        return stream << '}';
-    }
-    }
-}
-
-bool json::IsUndefined(const Node &node)
-{
-    return std::holds_alternative<std::monostate>(node);
-}
-
-bool json::IsNull(const Node &node)
-{
-    return std::holds_alternative<NullNode>(node);
-}
-
-bool json::IsBoolean(const Node &node)
-{
-    return std::holds_alternative<BooleanNode>(node);
-}
-
-bool json::IsNumber(const Node &node)
-{
-    return std::holds_alternative<NumberNode>(node);
-}
-
-bool json::IsString(const Node &node)
-{
-    return std::holds_alternative<StringNode>(node);
-}
-
-bool json::IsArray(const Node &node)
-{
-    return std::holds_alternative<ArrayNode>(node);
-}
-
-bool json::IsObject(const Node &node)
-{
-    return std::holds_alternative<ObjectNode>(node);
-}
-
-const json::NullNode &json::AsNull(const Node &node)
-{
-    return std::get<NullNode>(node);
-}
-
-const json::BooleanNode &json::AsBoolean(const Node &node)
-{
-    return std::get<BooleanNode>(node);
-}
-
-const json::NumberNode &json::AsNumber(const Node &node)
-{
-    return std::get<NumberNode>(node);
-}
-
-const json::StringNode &json::AsString(const Node &node)
-{
-    return std::get<StringNode>(node);
-}
-
-const json::ArrayNode &json::AsArray(const Node &node)
-{
-    return std::get<ArrayNode>(node);
-}
-
-const json::ObjectNode &json::AsObject(const Node &node)
-{
-    return std::get<ObjectNode>(node);
-}
-
-json::NullNode &json::AsNull(Node &node)
-{
-    return std::get<NullNode>(node);
-}
-
-json::BooleanNode &json::AsBoolean(Node &node)
-{
-    return std::get<BooleanNode>(node);
-}
-
-json::NumberNode &json::AsNumber(Node &node)
-{
-    return std::get<NumberNode>(node);
-}
-
-json::StringNode &json::AsString(Node &node)
-{
-    return std::get<StringNode>(node);
-}
-
-json::ArrayNode &json::AsArray(Node &node)
-{
-    return std::get<ArrayNode>(node);
-}
-
-json::ObjectNode &json::AsObject(Node &node)
-{
-    return std::get<ObjectNode>(node);
 }
 
 std::ostream &json::compact(std::ostream &stream)
@@ -556,23 +394,7 @@ std::ostream &json::pretty(std::ostream &stream)
 
 std::ostream &operator<<(std::ostream &stream, const json::Node &node)
 {
-    if (json::IsUndefined(node))
-        return stream << "<undefined>";
-
-    if (json::IsNull(node))
-        return json::AsNull(node).Print(stream);
-    if (json::IsBoolean(node))
-        return json::AsBoolean(node).Print(stream);
-    if (json::IsNumber(node))
-        return json::AsNumber(node).Print(stream);
-    if (json::IsString(node))
-        return json::AsString(node).Print(stream);
-    if (json::IsArray(node))
-        return json::AsArray(node).Print(stream);
-    if (json::IsObject(node))
-        return json::AsObject(node).Print(stream);
-
-    return stream << "<error>";
+    return node.Print(stream);
 }
 
 std::istream &operator>>(std::istream &stream, json::Node &node)
@@ -584,9 +406,9 @@ std::istream &operator>>(std::istream &stream, json::Node &node)
 template<>
 bool from_json(const json::Node &node, bool &value)
 {
-    if (json::IsBoolean(node))
+    if (node.IsBoolean())
     {
-        value = json::AsBoolean(node);
+        value = node.GetBoolean();
         return true;
     }
 
@@ -596,15 +418,15 @@ bool from_json(const json::Node &node, bool &value)
 template<>
 void to_json(json::Node &node, const bool &value)
 {
-    node = json::BooleanNode(value);
+    node = { value };
 }
 
 template<>
 bool from_json(const json::Node &node, long double &value)
 {
-    if (json::IsNumber(node))
+    if (node.IsNumber())
     {
-        value = json::AsNumber(node);
+        value = node.GetNumber();
         return true;
     }
 
@@ -614,15 +436,15 @@ bool from_json(const json::Node &node, long double &value)
 template<>
 void to_json(json::Node &node, const long double &value)
 {
-    node = json::NumberNode(value);
+    node = { value };
 }
 
 template<>
 bool from_json(const json::Node &node, std::string &value)
 {
-    if (json::IsString(node))
+    if (node.IsString())
     {
-        value = json::AsString(node);
+        value = node.GetString();
         return true;
     }
 
@@ -632,5 +454,5 @@ bool from_json(const json::Node &node, std::string &value)
 template<>
 void to_json(json::Node &node, const std::string &value)
 {
-    node = json::StringNode(value);
+    node = { value };
 }
