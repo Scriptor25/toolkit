@@ -47,6 +47,12 @@ namespace json
                         || std::same_as<std::remove_cvref_t<T>, Array>
                         || std::same_as<std::remove_cvref_t<T>, Object>;
 
+    template<typename T>
+    concept integral = std::integral<std::remove_cvref_t<T>>;
+
+    template<typename T>
+    concept floating_point = std::floating_point<std::remove_cvref_t<T>>;
+
     template<typename>
     struct is_vector : std::false_type
     {
@@ -144,16 +150,16 @@ bool from_json(N &&node, T &value);
 template<json::primitive T>
 void to_json(json::Node &node, T &&value);
 
-template<json::node N, std::floating_point T>
+template<json::node N, json::floating_point T>
 bool from_json(N &&node, T &value);
 
-template<std::floating_point T>
+template<json::floating_point T>
 void to_json(json::Node &node, T &&value);
 
-template<json::node N, std::integral T>
+template<json::node N, json::integral T>
 bool from_json(N &&node, T &value);
 
-template<std::integral T>
+template<json::integral T>
 void to_json(json::Node &node, T &&value);
 
 template<json::node N, typename T>
@@ -374,7 +380,7 @@ void to_json(json::Node &node, T &&value)
     node = json::Node(std::forward<T>(value));
 }
 
-template<json::node N, std::floating_point T>
+template<json::node N, json::floating_point T>
 bool from_json(N &&node, T &value)
 {
     if (json::Number val; from_json(std::forward<N>(node), value))
@@ -386,13 +392,13 @@ bool from_json(N &&node, T &value)
     return false;
 }
 
-template<std::floating_point T>
+template<json::floating_point T>
 void to_json(json::Node &node, T &&value)
 {
     node = json::Node(static_cast<json::Number>(std::forward<T>(value)));
 }
 
-template<json::node N, std::integral T>
+template<json::node N, json::integral T>
 bool from_json(N &&node, T &value)
 {
     if (json::Number val; from_json(std::forward<N>(node), value))
@@ -404,7 +410,7 @@ bool from_json(N &&node, T &value)
     return false;
 }
 
-template<std::integral T>
+template<json::integral T>
 void to_json(json::Node &node, T &&value)
 {
     node = json::Node(static_cast<json::Number>(std::forward<T>(value)));
