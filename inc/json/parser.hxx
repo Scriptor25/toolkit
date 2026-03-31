@@ -27,6 +27,7 @@ namespace json
         [[nodiscard]] bool At(char c) const;
 
         bool Skip(char c);
+        bool Skip(std::string_view s);
         bool SkipWhitespace();
 
     private:

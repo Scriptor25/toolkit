@@ -56,53 +56,35 @@ json::Node json::Parser::Parse()
 
 json::Node json::Parser::ParseNull()
 {
-    if (!Skip('n'))
+    if (!Skip("null"))
         return {};
-    if (!Skip('u'))
-        return {};
-    if (!Skip('l'))
-        return {};
-    if (!Skip('l'))
-        return {};
-    return { nullptr };
+    return Node(nullptr);
 }
 
 json::Node json::Parser::ParseBoolean()
 {
-    if (Skip('f'))
+    if (At('f'))
     {
-        if (!Skip('a'))
+        if (!Skip("false"))
             return {};
-        if (!Skip('l'))
-            return {};
-        if (!Skip('s'))
-            return {};
-        if (!Skip('e'))
-            return {};
-        return { false };
+        return Node(false);
     }
 
-    if (!Skip('t'))
+    if (!Skip("true"))
         return {};
-    if (!Skip('r'))
-        return {};
-    if (!Skip('u'))
-        return {};
-    if (!Skip('e'))
-        return {};
-    return { true };
+    return Node(true);
 }
 
 json::Node json::Parser::ParseNumber()
 {
     std::string buffer;
 
-    if (Skip('-'))
-        buffer += '-';
+    if (At('-'))
+        buffer += Pop();
 
-    if (Skip('0'))
+    if (At('0'))
     {
-        buffer += '0';
+        buffer += Pop();
     }
     else if ('1' <= m_Buffer && m_Buffer <= '9')
     {
@@ -113,9 +95,9 @@ json::Node json::Parser::ParseNumber()
     else
         return {};
 
-    if (Skip('.'))
+    if (At('.'))
     {
-        buffer += '.';
+        buffer += Pop();
 
         if (!('0' <= m_Buffer && m_Buffer <= '9'))
             return {};
@@ -125,12 +107,12 @@ json::Node json::Parser::ParseNumber()
         while ('0' <= m_Buffer && m_Buffer <= '9');
     }
 
-    if (m_Buffer == 'e' || m_Buffer == 'E')
+    if (At('e') || At('E'))
     {
         buffer += static_cast<char>(m_Buffer);
         Get();
 
-        if (m_Buffer == '-' || m_Buffer == '+')
+        if (At('-') || At('+'))
             buffer += Pop();
 
         if (!('0' <= m_Buffer && m_Buffer <= '9'))
@@ -141,12 +123,12 @@ json::Node json::Parser::ParseNumber()
         while ('0' <= m_Buffer && m_Buffer <= '9');
     }
 
-    return { std::stold(buffer, nullptr) };
+    return Node(std::stold(buffer, nullptr));
 }
 
 json::Node json::Parser::ParseString()
 {
-    std::string value;
+    String value;
 
     if (!Skip('"'))
         return {};
@@ -204,12 +186,12 @@ json::Node json::Parser::ParseString()
         }
     }
 
-    return { std::move(value) };
+    return Node(std::move(value));
 }
 
 json::Node json::Parser::ParseArray()
 {
-    std::vector<Node> elements;
+    Array nodes;
 
     if (!Skip('['))
         return {};
@@ -221,10 +203,10 @@ json::Node json::Parser::ParseArray()
         do
         {
             auto element = Parse();
-            if (element.IsUndefined())
+            if (!element)
                 return {};
 
-            elements.push_back(std::move(element));
+            nodes.push_back(std::move(element));
         }
         while (Skip(','));
 
@@ -232,12 +214,12 @@ json::Node json::Parser::ParseArray()
             return {};
     }
 
-    return { std::move(elements) };
+    return Node(std::move(nodes));
 }
 
 json::Node json::Parser::ParseObject()
 {
-    std::map<std::string, Node> elements;
+    Object nodes;
 
     if (!Skip('{'))
         return {};
@@ -251,7 +233,7 @@ json::Node json::Parser::ParseObject()
             SkipWhitespace();
 
             const auto key = ParseString();
-            if (key.IsUndefined())
+            if (!key)
                 return {};
 
             SkipWhitespace();
@@ -260,10 +242,10 @@ json::Node json::Parser::ParseObject()
                 return {};
 
             auto value = Parse();
-            if (value.IsUndefined())
+            if (!value)
                 return {};
 
-            elements[key.GetString()] = std::move(value);
+            nodes[key.Get<String>()] = std::move(value);
         }
         while (Skip(','));
 
@@ -271,7 +253,7 @@ json::Node json::Parser::ParseObject()
             return {};
     }
 
-    return { std::move(elements) };
+    return Node(std::move(nodes));
 }
 
 void json::Parser::Get()
@@ -297,6 +279,14 @@ bool json::Parser::Skip(const char c)
     if (skip)
         Get();
     return skip;
+}
+
+bool json::Parser::Skip(const std::string_view s)
+{
+    for (const auto c : s)
+        if (!Skip(c))
+            return false;
+    return true;
 }
 
 static bool is_whitespace(const int c)

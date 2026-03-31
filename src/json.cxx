@@ -1,47 +1,25 @@
-#include <iomanip>
-#include <variant>
-
 #include <json/json.hxx>
 #include <json/parser.hxx>
 #include <json/utf8.hxx>
-
-enum class json_format
-{
-    compact,
-    pretty,
-};
-
-static auto &get_context_format(std::ostream &stream)
-{
-    static const auto index = std::ios_base::xalloc();
-
-    auto &ref = stream.iword(index);
-
-    return *reinterpret_cast<json_format *>(&ref);
-}
 
 static auto &get_context_depth(std::ostream &stream)
 {
     static const auto index = std::ios_base::xalloc();
 
-    auto &ref = stream.iword(index);
-
-    return *reinterpret_cast<unsigned long *>(&ref);
+    return stream.iword(index);
 }
 
 static std::ostream &depth_space(std::ostream &stream)
 {
     const auto &depth = get_context_depth(stream);
 
+    const auto width = stream.width();
+    const std::string buffer(width, ' ');
+
     for (unsigned i = 0; i < depth; ++i)
-        stream << "  ";
+        stream << buffer;
 
     return stream;
-}
-
-json::Node::Node(NodeValue &&value)
-    : Value(std::forward<NodeValue>(value))
-{
 }
 
 json::Node::Node(const NodeValue &value)
@@ -49,116 +27,53 @@ json::Node::Node(const NodeValue &value)
 {
 }
 
-bool json::Node::IsUndefined() const
+json::Node::Node(NodeValue &&value)
+    : Value(std::forward<NodeValue>(value))
 {
-    return std::holds_alternative<std::monostate>(Value);
 }
 
-bool json::Node::IsNull() const
+json::Node &json::Node::operator=(const NodeValue &value)
 {
-    return std::holds_alternative<std::nullptr_t>(Value);
+    Value = value;
+    return *this;
 }
 
-bool json::Node::IsBoolean() const
+json::Node &json::Node::operator=(NodeValue &&value)
 {
-    return std::holds_alternative<bool>(Value);
+    Value = std::forward<NodeValue>(value);
+    return *this;
 }
 
-bool json::Node::IsNumber() const
+bool json::Node::operator!() const
 {
-    return std::holds_alternative<long double>(Value);
-}
-
-bool json::Node::IsString() const
-{
-    return std::holds_alternative<std::string>(Value);
-}
-
-bool json::Node::IsArray() const
-{
-    return std::holds_alternative<std::vector<Node>>(Value);
-}
-
-bool json::Node::IsObject() const
-{
-    return std::holds_alternative<std::map<std::string, Node>>(Value);
-}
-
-bool &json::Node::GetBoolean()
-{
-    return std::get<bool>(Value);
-}
-
-const bool &json::Node::GetBoolean() const
-{
-    return std::get<bool>(Value);
-}
-
-long double &json::Node::GetNumber()
-{
-    return std::get<long double>(Value);
-}
-
-const long double &json::Node::GetNumber() const
-{
-    return std::get<long double>(Value);
-}
-
-std::string &json::Node::GetString()
-{
-    return std::get<std::string>(Value);
-}
-
-const std::string &json::Node::GetString() const
-{
-    return std::get<std::string>(Value);
-}
-
-std::vector<json::Node> &json::Node::GetArray()
-{
-    return std::get<std::vector<Node>>(Value);
-}
-
-const std::vector<json::Node> &json::Node::GetArray() const
-{
-    return std::get<std::vector<Node>>(Value);
-}
-
-std::map<std::string, json::Node> &json::Node::GetObject()
-{
-    return std::get<std::map<std::string, Node>>(Value);
-}
-
-const std::map<std::string, json::Node> &json::Node::GetObject() const
-{
-    return std::get<std::map<std::string, Node>>(Value);
+    return Is<Undefined>();
 }
 
 std::ostream &json::Node::Print(std::ostream &stream) const
 {
     struct
     {
-        void operator()(std::monostate) const
+        void operator()(Undefined) const
         {
             stream << "<undefined>";
-        };
+        }
 
-        void operator()(std::nullptr_t) const
+        void operator()(Null) const
         {
             stream << "null";
-        };
+        }
 
-        void operator()(const bool value) const
+        void operator()(const Boolean value) const
         {
             stream << (value ? "true" : "false");
-        };
+        }
 
-        void operator()(const long double value) const
+        void operator()(const Number value) const
         {
             stream << std::scientific << value;
-        };
+        }
 
-        void operator()(const std::string &value) const
+        void operator()(const String &value) const
         {
             stream << '"';
 
@@ -190,21 +105,37 @@ std::ostream &json::Node::Print(std::ostream &stream) const
                     if (0x20 <= c && c < 0x7F)
                         stream << static_cast<char>(c);
                     else
-                        stream << "\\u" << std::hex << std::setw(4) << std::setfill('0') << static_cast<int>(c);
+                    {
+                        auto val = static_cast<int>(c);
+                        stream << "\\u";
+
+                        char buffer[5];
+                        int x = sizeof(buffer) - 1;
+                        buffer[x--] = '\0';
+
+                        for (; x >= 0 && val > 0; --x)
+                        {
+                            auto [quot, rem] = std::div(val, 0x10);
+                            buffer[x] = rem < 10 ? rem + '0' : rem - 10 + 'A';
+                            val = quot;
+                        }
+
+                        for (; x >= 0; --x)
+                            buffer[x] = '0';
+
+                        stream << buffer;
+                    }
                     break;
                 }
 
             stream << '"';
-        };
+        }
 
-        void operator()(const std::vector<Node> &value) const
+        void operator()(const Array &value) const
         {
-            const auto &format = get_context_format(stream);
             auto &depth = get_context_depth(stream);
 
-            switch (format)
-            {
-            case json_format::pretty:
+            if (stream.width())
             {
                 stream << '[';
                 if (value.size() > 1)
@@ -222,11 +153,8 @@ std::ostream &json::Node::Print(std::ostream &stream) const
                 if (value.size() > 1)
                     stream << '\n' << depth_space;
                 stream << ']';
-                break;
             }
-
-            case json_format::compact:
-            default:
+            else
             {
                 stream << '[';
                 depth++;
@@ -238,19 +166,14 @@ std::ostream &json::Node::Print(std::ostream &stream) const
                 }
                 depth--;
                 stream << ']';
-                break;
             }
-            }
-        };
+        }
 
-        void operator()(const std::map<std::string, Node> &value) const
+        void operator()(const Object &value) const
         {
-            const auto &format = get_context_format(stream);
             auto &depth = get_context_depth(stream);
 
-            switch (format)
-            {
-            case json_format::pretty:
+            if (stream.width())
             {
                 stream << '{';
                 if (!value.empty())
@@ -266,11 +189,8 @@ std::ostream &json::Node::Print(std::ostream &stream) const
                 if (!value.empty())
                     stream << '\n' << depth_space;
                 stream << '}';
-                break;
             }
-
-            case json_format::compact:
-            default:
+            else
             {
                 stream << '{';
                 depth++;
@@ -282,10 +202,8 @@ std::ostream &json::Node::Print(std::ostream &stream) const
                 }
                 depth--;
                 stream << '}';
-                break;
             }
-            }
-        };
+        }
 
         std::ostream &stream;
     } visitor{ stream };
@@ -297,83 +215,103 @@ std::ostream &json::Node::Print(std::ostream &stream) const
 
 json::Node::iterator json::Node::begin()
 {
-    if (IsArray())
-        return { GetArray().begin(), 0 };
-    return { GetObject().begin() };
+    return std::visit(
+        []<typename T>(T &value)
+        {
+            if constexpr (std::same_as<T, Array> || std::same_as<T, Object>)
+                return iterator(value.begin());
+            else
+                return iterator();
+        },
+        Value);
 }
 
 json::Node::iterator json::Node::end()
 {
-    if (IsArray())
-    {
-        auto &array = GetArray();
-        return { array.end(), array.size() };
-    }
-    return { GetObject().end() };
+    return std::visit(
+        []<typename T>(T &value)
+        {
+            if constexpr (std::same_as<T, Array> || std::same_as<T, Object>)
+                return iterator(value.end());
+            else
+                return iterator();
+        },
+        Value);
 }
 
 json::Node::const_iterator json::Node::begin() const
 {
-    if (IsArray())
-        return { GetArray().begin(), 0 };
-    return { GetObject().begin() };
+    return std::visit(
+        []<typename T>(T &value)
+        {
+            if constexpr (std::same_as<T, Array> || std::same_as<T, Object>)
+                return const_iterator(value.begin());
+            else
+                return const_iterator();
+        },
+        Value);
 }
 
 json::Node::const_iterator json::Node::end() const
 {
-    if (IsArray())
-    {
-        auto &array = GetArray();
-        return { array.end(), array.size() };
-    }
-    return { GetObject().end() };
+    return std::visit(
+        []<typename T>(T &value)
+        {
+            if constexpr (std::same_as<T, Array> || std::same_as<T, Object>)
+                return const_iterator(value.end());
+            else
+                return const_iterator();
+        },
+        Value);
 }
 
-std::size_t json::Node::size() const
+json::Index json::Node::size() const
 {
-    if (IsArray())
-        return GetArray().size();
-    return GetObject().size();
+    return std::visit(
+        []<typename T>(T &value)
+        {
+            if constexpr (std::same_as<T, Array> || std::same_as<T, Object>)
+                return value.size();
+            else
+                return Index();
+        },
+        Value);
 }
 
-json::Node &json::Node::operator[](const std::size_t index)
+json::Node &json::Node::operator[](const Index index)
 {
-    return GetArray()[index];
+    return Get<Array>()[index];
 }
 
-json::Node json::Node::operator[](const std::size_t index) const
+json::Node json::Node::operator[](const Index index) const
 {
-    if (IsArray())
-        if (auto &value = GetArray(); index < value.size())
-            return value[index];
-    return {};
+    return std::visit(
+        [&index]<typename T>(T &value)
+        {
+            if constexpr (std::same_as<T, Array>)
+                return value[index];
+            else
+                return Node();
+        },
+        Value);
 }
 
 json::Node &json::Node::operator[](const std::string &key)
 {
-    return GetObject()[key];
+    return Get<Object>()[key];
 }
 
 json::Node json::Node::operator[](const std::string &key) const
 {
-    if (IsObject())
-        if (auto &value = GetObject(); value.contains(key))
-            return value.at(key);
-    return {};
-}
-
-std::ostream &json::compact(std::ostream &stream)
-{
-    auto &format = get_context_format(stream);
-    format = json_format::compact;
-    return stream;
-}
-
-std::ostream &json::pretty(std::ostream &stream)
-{
-    auto &format = get_context_format(stream);
-    format = json_format::pretty;
-    return stream;
+    return std::visit(
+        [&key]<typename T>(T &value)
+        {
+            if constexpr (std::same_as<T, Object>)
+                return value[key];
+            else
+                return Node();
+        },
+        Value);
 }
 
 std::ostream &operator<<(std::ostream &stream, const json::Node &node)
@@ -385,58 +323,4 @@ std::istream &operator>>(std::istream &stream, json::Node &node)
 {
     node = json::Parser(stream).Parse();
     return stream;
-}
-
-template<>
-bool from_json(const json::Node &node, bool &value)
-{
-    if (node.IsBoolean())
-    {
-        value = node.GetBoolean();
-        return true;
-    }
-
-    return false;
-}
-
-template<>
-void to_json(json::Node &node, const bool &value)
-{
-    node = { value };
-}
-
-template<>
-bool from_json(const json::Node &node, long double &value)
-{
-    if (node.IsNumber())
-    {
-        value = node.GetNumber();
-        return true;
-    }
-
-    return false;
-}
-
-template<>
-void to_json(json::Node &node, const long double &value)
-{
-    node = { value };
-}
-
-template<>
-bool from_json(const json::Node &node, std::string &value)
-{
-    if (node.IsString())
-    {
-        value = node.GetString();
-        return true;
-    }
-
-    return false;
-}
-
-template<>
-void to_json(json::Node &node, const std::string &value)
-{
-    node = { value };
 }
