@@ -48,10 +48,10 @@ namespace json
                         || std::same_as<std::remove_cvref_t<T>, Object>;
 
     template<typename T>
-    concept integral = std::integral<std::remove_cvref_t<T>>;
+    concept integral = std::integral<std::remove_cvref_t<T>> && !primitive<T>;
 
     template<typename T>
-    concept floating_point = std::floating_point<std::remove_cvref_t<T>>;
+    concept floating_point = std::floating_point<std::remove_cvref_t<T>> && !primitive<T>;
 
     template<typename>
     struct is_vector : std::false_type
@@ -64,7 +64,7 @@ namespace json
     };
 
     template<typename T>
-    concept vector = is_vector<std::remove_cvref_t<T>>::value;
+    concept vector = is_vector<std::remove_cvref_t<T>>::value && !primitive<T>;
 
     template<typename>
     struct is_set : std::false_type
@@ -103,7 +103,7 @@ namespace json
     };
 
     template<typename T>
-    concept map = is_map<std::remove_cvref_t<T>>::value;
+    concept map = is_map<std::remove_cvref_t<T>>::value && !primitive<T>;
 
     template<typename>
     struct is_optional : std::false_type
