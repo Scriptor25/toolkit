@@ -348,7 +348,7 @@ bool from_json(N &&node, T &value)
 {
     if (node.template Is<T>())
     {
-        value = std::forward<T>(node.template Get<T>());
+        value = node.template Get<T>();
         return true;
     }
 
@@ -546,7 +546,7 @@ void to_json(json::Node &node, T &&value)
 template<json::node N, typename T>
 bool from_json_opt(N &&node, T &value, T default_value)
 {
-    if (std::optional<T> opt; from_json(std::forward<json::Node>(node), opt))
+    if (std::optional<T> opt; from_json(std::forward<N>(node), opt))
     {
         value = opt.value_or(std::move(default_value));
         return true;
@@ -558,7 +558,7 @@ bool from_json_opt(N &&node, T &value, T default_value)
 template<json::node N, typename T>
 bool operator>>(N &&node, T &value)
 {
-    return from_json(std::forward<json::Node>(node), value);
+    return from_json(std::forward<N>(node), value);
 }
 
 template<typename T>
