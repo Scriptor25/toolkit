@@ -291,7 +291,7 @@ json::Node json::Node::operator[](const Index index) const
         [&index]<typename T>(T &value) -> Node
         {
             if constexpr (std::same_as<std::decay_t<T>, Array>)
-                return value[index];
+                return index < value.size() ? value[index] : Undefined();
             else
                 throw std::runtime_error("type does not have `operator[](Index) const`");
         },
@@ -309,7 +309,7 @@ json::Node json::Node::operator[](const std::string &key) const
         [&key]<typename T>(T &value) -> Node
         {
             if constexpr (std::same_as<std::decay_t<T>, Object>)
-                return value.at(key);
+                return value.contains(key) ? value.at(key) : Undefined();
             else
                 throw std::runtime_error("type does not have `operator[](Key) const`");
         },
