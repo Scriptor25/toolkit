@@ -3,12 +3,6 @@
 #include <json/concepts.hxx>
 #include <json/forward.hxx>
 
-template<json::node N, typename T>
-bool from_json(N &&node, T &value);
-
-template<typename T>
-void to_json(json::Node &node, T &&value);
-
 namespace json
 {
     struct Node final
@@ -105,37 +99,16 @@ namespace json
         }
 
         template<assignable T>
-        Node(T &&value)
-        {
-            using ::to_json;
-
-            to_json(*this, std::forward<T>(value));
-        }
+        Node(T &&value);
 
         template<assignable T>
-        auto &&operator=(T &&value)
-        {
-            using ::to_json;
-
-            to_json(*this, std::forward<T>(value));
-            return *this;
-        }
+        auto &&operator=(T &&value);
 
         template<typename T>
-        bool operator>>(T &value)
-        {
-            using ::from_json;
-
-            return from_json(*this, value);
-        }
+        bool operator>>(T &value);
 
         template<typename T>
-        bool operator>>(T &value) const
-        {
-            using ::from_json;
-
-            return from_json(*this, value);
-        }
+        bool operator>>(T &value) const;
 
         template<primitive T>
         auto Is() const
@@ -179,6 +152,12 @@ namespace json
     std::ostream &operator<<(std::ostream &stream, const Node &node);
     std::istream &operator>>(std::istream &stream, Node &node);
 }
+
+template<json::node N, typename T>
+bool from_json(N &&node, T &value) = delete;
+
+template<typename T>
+void to_json(json::Node &node, T &&value) = delete;
 
 template<json::node N>
 bool from_json(N &&node, json::Node &value)
@@ -434,4 +413,40 @@ bool from_json_opt(N &&node, T &value, T default_value)
     }
 
     return false;
+}
+
+namespace json
+{
+    template<assignable T>
+    Node::Node(T &&value)
+    {
+        using ::to_json;
+
+        to_json(*this, std::forward<T>(value));
+    }
+
+    template<assignable T>
+    auto &&Node::operator=(T &&value)
+    {
+        using ::to_json;
+
+        to_json(*this, std::forward<T>(value));
+        return *this;
+    }
+
+    template<typename T>
+    bool Node::operator>>(T &value)
+    {
+        using ::from_json;
+
+        return from_json(*this, value);
+    }
+
+    template<typename T>
+    bool Node::operator>>(T &value) const
+    {
+        using ::from_json;
+
+        return from_json(*this, value);
+    }
 }
