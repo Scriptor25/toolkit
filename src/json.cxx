@@ -216,12 +216,12 @@ std::ostream &json::Node::Print(std::ostream &stream) const
 json::Node::iterator json::Node::begin()
 {
     return std::visit(
-        []<typename T>(T &value)
+        []<typename T>(T &value) -> iterator
         {
             if constexpr (std::same_as<T, Array> || std::same_as<T, Object>)
                 return iterator(value.begin());
             else
-                return iterator();
+                throw std::runtime_error("type does not have `begin()`");
         },
         Value);
 }
@@ -229,12 +229,12 @@ json::Node::iterator json::Node::begin()
 json::Node::iterator json::Node::end()
 {
     return std::visit(
-        []<typename T>(T &value)
+        []<typename T>(T &value) -> iterator
         {
             if constexpr (std::same_as<T, Array> || std::same_as<T, Object>)
                 return iterator(value.end());
             else
-                return iterator();
+                throw std::runtime_error("type does not have `end()`");
         },
         Value);
 }
@@ -242,12 +242,12 @@ json::Node::iterator json::Node::end()
 json::Node::const_iterator json::Node::begin() const
 {
     return std::visit(
-        []<typename T>(T &value)
+        []<typename T>(T &value) -> const_iterator
         {
             if constexpr (std::same_as<T, Array> || std::same_as<T, Object>)
                 return const_iterator(value.begin());
             else
-                return const_iterator();
+                throw std::runtime_error("type does not have `begin() const`");
         },
         Value);
 }
@@ -255,12 +255,12 @@ json::Node::const_iterator json::Node::begin() const
 json::Node::const_iterator json::Node::end() const
 {
     return std::visit(
-        []<typename T>(T &value)
+        []<typename T>(T &value) -> const_iterator
         {
             if constexpr (std::same_as<T, Array> || std::same_as<T, Object>)
                 return const_iterator(value.end());
             else
-                return const_iterator();
+                throw std::runtime_error("type does not have `end() const`");
         },
         Value);
 }
@@ -268,12 +268,12 @@ json::Node::const_iterator json::Node::end() const
 json::Index json::Node::size() const
 {
     return std::visit(
-        []<typename T>(T &value)
+        []<typename T>(T &value) -> Index
         {
             if constexpr (std::same_as<T, Array> || std::same_as<T, Object>)
                 return value.size();
             else
-                return Index();
+                throw std::runtime_error("type does not have `size() const`");
         },
         Value);
 }
@@ -286,12 +286,12 @@ json::Node &json::Node::operator[](const Index index)
 json::Node json::Node::operator[](const Index index) const
 {
     return std::visit(
-        [&index]<typename T>(T &value)
+        [&index]<typename T>(T &value) -> Node
         {
             if constexpr (std::same_as<T, Array>)
                 return value[index];
             else
-                return Node();
+                throw std::runtime_error("type does not have `operator[](Index) const`");
         },
         Value);
 }
@@ -304,12 +304,12 @@ json::Node &json::Node::operator[](const std::string &key)
 json::Node json::Node::operator[](const std::string &key) const
 {
     return std::visit(
-        [&key]<typename T>(T &value)
+        [&key]<typename T>(T &value) -> Node
         {
             if constexpr (std::same_as<T, Object>)
                 return value[key];
             else
-                return Node();
+                throw std::runtime_error("type does not have `operator[](Key) const`");
         },
         Value);
 }

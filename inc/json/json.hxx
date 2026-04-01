@@ -12,8 +12,6 @@ namespace json
         {
             using value_type = std::pair<Key, T &>;
 
-            iterator_base() = default;
-
             explicit iterator_base(V &&it)
                 : it(std::forward<V>(it))
             {
@@ -33,12 +31,12 @@ namespace json
             {
                 struct
                 {
-                    auto operator()(V &&i) -> value_type
+                    auto operator()(const V &i) -> value_type
                     {
                         return { {}, *i };
                     }
 
-                    auto operator()(M &&i) -> value_type
+                    auto operator()(const M &i) -> value_type
                     {
                         return { i->first, i->second };
                     }
@@ -59,7 +57,7 @@ namespace json
                 return *this;
             }
 
-            std::variant<std::monostate, V, M> it{};
+            std::variant<V, M> it{};
         };
 
         using iterator = iterator_base<
@@ -92,7 +90,7 @@ namespace json
         }
 
         template<primitive T>
-        auto &&operator=(T &&value)
+        Node &operator=(T &&value)
         {
             Value = std::forward<T>(value);
             return *this;
@@ -102,7 +100,7 @@ namespace json
         Node(T &&value);
 
         template<assignable T>
-        auto &&operator=(T &&value);
+        Node &operator=(T &&value);
 
         template<typename T>
         bool operator>>(T &value);
@@ -111,7 +109,7 @@ namespace json
         bool operator>>(T &value) const;
 
         template<primitive T>
-        auto Is() const
+        [[nodiscard]] auto Is() const
         {
             return std::holds_alternative<T>(Value);
         }
@@ -153,31 +151,18 @@ namespace json
     std::istream &operator>>(std::istream &stream, Node &node);
 }
 
-template<json::node N, typename T>
-bool from_json(N &&node, T &value) = delete;
+template<typename T>
+bool from_json(const json::Node &node, T &value) = delete;
 
 template<typename T>
 void to_json(json::Node &node, T &&value) = delete;
 
-template<json::node N>
-bool from_json(N &&node, json::Node &value)
+template<json::primitive T>
+bool from_json(const json::Node &node, T &value)
 {
-    value = std::forward<N>(node);
-    return true;
-}
-
-template<json::node T>
-void to_json(json::Node &node, T &&value)
-{
-    node = std::forward<T>(value);
-}
-
-template<json::node N, json::primitive T>
-bool from_json(N &&node, T &value)
-{
-    if (node.template Is<T>())
+    if (node.Is<T>())
     {
-        value = node.template Get<T>();
+        value = node.Get<T>();
         return true;
     }
 
@@ -190,12 +175,12 @@ void to_json(json::Node &node, T &&value)
     node = json::Node(std::forward<T>(value));
 }
 
-template<json::node N, json::floating_point T>
-bool from_json(N &&node, T &value)
+template<json::floating_point T>
+bool from_json(const json::Node &node, T &value)
 {
     using ::from_json;
 
-    if (json::Number val; from_json(std::forward<N>(node), val))
+    if (json::Number val; from_json(node, val))
     {
         value = static_cast<T>(val);
         return true;
@@ -212,12 +197,12 @@ void to_json(json::Node &node, T &&value)
     to_json(node, static_cast<json::Number>(std::forward<T>(value)));
 }
 
-template<json::node N, json::integral T>
-bool from_json(N &&node, T &value)
+template<json::integral T>
+bool from_json(const json::Node &node, T &value)
 {
     using ::from_json;
 
-    if (json::Number val; from_json(std::forward<N>(node), val))
+    if (json::Number val; from_json(node, val))
     {
         value = static_cast<T>(val);
         return true;
@@ -234,12 +219,12 @@ void to_json(json::Node &node, T &&value)
     to_json(node, static_cast<json::Number>(std::forward<T>(value)));
 }
 
-template<json::node N, typename T>
-bool from_json(N &&node, std::vector<T> &value)
+template<typename T>
+bool from_json(const json::Node &node, std::vector<T> &value)
 {
     using ::from_json;
 
-    if (!node.template Is<json::Array>())
+    if (!node.Is<json::Array>())
         return false;
 
     value.resize(node.size());
@@ -262,12 +247,12 @@ void to_json(json::Node &node, T &&value)
         to_json(node[i], value[i]);
 }
 
-template<json::node N, typename T, std::size_t S>
-bool from_json(N &&node, std::array<T, S> &value)
+template<typename T, std::size_t S>
+bool from_json(const json::Node &node, std::array<T, S> &value)
 {
     using ::from_json;
 
-    if (!node.template Is<json::Array>() || node.size() != S)
+    if (!node.Is<json::Array>() || node.size() != S)
         return false;
 
     value.resize(S);
@@ -290,12 +275,12 @@ void to_json(json::Node &node, T &&value)
         to_json(node[i], value[i]);
 }
 
-template<json::node N, typename T>
-bool from_json(N &&node, std::set<T> &value)
+template<typename T>
+bool from_json(const json::Node &node, std::set<T> &value)
 {
     using ::from_json;
 
-    if (std::vector<T> val; from_json(std::forward<N>(node), val))
+    if (std::vector<T> val; from_json(node, val))
     {
         value = { std::make_move_iterator(val.begin()), std::make_move_iterator(val.end()) };
         return true;
@@ -312,12 +297,12 @@ void to_json(json::Node &node, T &&value)
     to_json(node, std::vector(value.begin(), value.end()));
 }
 
-template<json::node N, typename T>
-bool from_json(N &&node, std::map<json::Key, T> &value)
+template<typename T>
+bool from_json(const json::Node &node, std::map<json::Key, T> &value)
 {
     using ::from_json;
 
-    if (!node.template Is<json::Object>())
+    if (!node.Is<json::Object>())
         return false;
 
     auto ok = true;
@@ -338,18 +323,18 @@ void to_json(json::Node &node, T &&value)
         to_json(node[key], val);
 }
 
-template<json::node N, typename T>
-bool from_json(N &&node, std::optional<T> &value)
+template<typename T>
+bool from_json(const json::Node &node, std::optional<T> &value)
 {
     using ::from_json;
 
-    if (node.template Is<json::Undefined>() || node.template Is<json::Null>())
+    if (node.Is<json::Undefined>() || node.Is<json::Null>())
     {
         value = std::nullopt;
         return true;
     }
 
-    if (T val; from_json(std::forward<N>(node), val))
+    if (T val; from_json(node, val))
     {
         value = std::move(val);
         return true;
@@ -372,8 +357,8 @@ void to_json(json::Node &node, T &&value)
     node = json::Undefined();
 }
 
-template<json::node N, typename... T>
-bool from_json(N &&node, std::variant<T...> &value)
+template<typename... T>
+bool from_json(const json::Node &node, std::variant<T...> &value)
 {
     using ::from_json;
 
@@ -401,12 +386,12 @@ void to_json(json::Node &node, T &&value)
         std::forward<T>(value));
 }
 
-template<json::node N, typename T>
-bool from_json_opt(N &&node, T &value, T default_value)
+template<typename T>
+bool from_json_opt(json::Node &node, T &value, T default_value)
 {
     using ::from_json;
 
-    if (std::optional<T> val; from_json(std::forward<N>(node), val))
+    if (std::optional<T> val; from_json(node, val))
     {
         value = val.value_or(std::move(default_value));
         return true;
@@ -426,7 +411,7 @@ namespace json
     }
 
     template<assignable T>
-    auto &&Node::operator=(T &&value)
+    Node &Node::operator=(T &&value)
     {
         using ::to_json;
 
