@@ -110,9 +110,20 @@ namespace json
     template<typename T>
     concept variant = is_variant<std::remove_cvref_t<T>>::value;
 
-    template<typename T>
+    template<typename>
     struct serializer
     {
-        static constexpr auto enable = false;
+    };
+
+    template<typename T>
+    concept enable_from_json = requires(Node &node, T &value)
+    {
+        serializer<std::decay_t<T>>::from_json(node, value);
+    };
+
+    template<typename T>
+    concept enable_to_json = requires(Node &node, T &&value)
+    {
+        serializer<std::decay_t<T>>::to_json(node, std::forward<T>(value));
     };
 }

@@ -370,11 +370,11 @@ namespace json
         template<typename T>
         bool operator()(const Node &node, T &value) const
         {
-            using S = serializer<std::decay_t<T>>;
+            using U = std::decay_t<T>;
 
-            if constexpr (S::enable)
+            if constexpr (enable_from_json<U>)
             {
-                return S::from_json(node, value);
+                return serializer<U>::from_json(node, value);
             }
             else
             {
@@ -391,16 +391,16 @@ namespace json
         template<typename T>
         void operator()(Node &node, T &&value) const
         {
-            using S = serializer<std::decay_t<T>>;
+            using U = std::decay_t<T>;
 
-            if constexpr (S::enable)
+            if constexpr (enable_to_json<U>)
             {
-                S::to_json(node, std::forward<T>(value));
+                return serializer<U>::to_json(node, std::forward<T>(value));
             }
             else
             {
                 using ::to_json;
-                to_json(node, std::forward<T>(value));
+                return to_json(node, std::forward<T>(value));
             }
         }
     };
