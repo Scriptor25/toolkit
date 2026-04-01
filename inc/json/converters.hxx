@@ -227,10 +227,4 @@ namespace json
 
         return false;
     }
-
-    template<node N, typename T>
-    bool operator>>(N &&node, T &value)
-    {
-        return from_json(std::forward<N>(node), value);
-    }
 }

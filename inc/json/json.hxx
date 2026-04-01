@@ -11,6 +11,12 @@ namespace json
     template<typename T>
     void to_json(Node &node, T &&value) = delete;
 
+    template<node N, typename T>
+    bool operator>>(N &&node, T &value)
+    {
+        return from_json(std::forward<N>(node), value);
+    }
+
     struct Node final
     {
         template<typename T, typename V, typename M>
@@ -107,13 +113,13 @@ namespace json
         template<assignable T>
         Node(T &&value)
         {
-            *this << value;
+            to_json(*this, std::forward<T>(value));
         }
 
         template<assignable T>
         auto &&operator=(T &&value)
         {
-            *this << value;
+            to_json(*this, std::forward<T>(value));
             return *this;
         }
 
