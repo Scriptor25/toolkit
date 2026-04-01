@@ -154,6 +154,19 @@ bool from_json(const json::Node &node, T &value) = delete;
 template<typename T>
 void to_json(json::Node &node, T &&value) = delete;
 
+template<json::node T>
+bool from_json(const json::Node &node, T &value)
+{
+    value = node;
+    return true;
+}
+
+template<json::node T>
+void to_json(json::Node &node, T &&value)
+{
+    node = std::forward<T>(value);
+}
+
 template<json::primitive T>
 bool from_json(const json::Node &node, T &value)
 {
