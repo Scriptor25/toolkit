@@ -211,14 +211,14 @@ template<json::node N, typename T>
 bool operator>>(N &&node, T &value)
 {
     using ::from_json;
-    return ::from_json(std::forward<N>(node), value);
+    return from_json(std::forward<N>(node), value);
 }
 
 template<typename T>
 json::Node &operator<<(json::Node &node, T &&value)
 {
     using ::to_json;
-    ::to_json(node, std::forward<T>(value));
+    to_json(node, std::forward<T>(value));
     return node;
 }
 
