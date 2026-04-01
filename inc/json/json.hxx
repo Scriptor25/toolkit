@@ -229,19 +229,17 @@ namespace json
         template<typename T, typename V, typename M>
         struct iterator_base final
         {
-            using entry_t = std::pair<Key, T &>;
+            using value_type = std::pair<Key, T &>;
 
-            iterator_base()
+            iterator_base() = default;
+
+            explicit iterator_base(V &&it)
+                : it(std::forward<V>(it))
             {
             }
 
-            explicit iterator_base(V it)
-                : it(it)
-            {
-            }
-
-            explicit iterator_base(M it)
-                : it(it)
+            explicit iterator_base(M &&it)
+                : it(std::forward<M>(it))
             {
             }
 
@@ -252,17 +250,20 @@ namespace json
 
             auto operator*() const
             {
-                return std::visit(
-                    [&]<typename I>(I &&i) -> entry_t
+                struct
+                {
+                    auto operator()(V &&i) -> value_type
                     {
-                        using X = std::remove_cvref_t<I>;
+                        return { {}, *i };
+                    }
 
-                        if constexpr (std::is_same_v<X, M>)
-                            return { i->first, i->second };
-                        else
-                            return { {}, *i };
-                    },
-                    it);
+                    auto operator()(M &&i) -> value_type
+                    {
+                        return { i->first, i->second };
+                    }
+                } visitor;
+
+                return std::visit(visitor, it);
             }
 
             auto &&operator++()
@@ -277,7 +278,7 @@ namespace json
                 return *this;
             }
 
-            std::variant<V, M> it{};
+            std::variant<std::monostate, V, M> it{};
         };
 
         using iterator = iterator_base<
@@ -302,16 +303,6 @@ namespace json
 
         explicit Node(NodeValue &&value);
         Node &operator=(NodeValue &&value);
-
-        Node(const std::initializer_list<Array::value_type> entries)
-            : Value(Array(entries))
-        {
-        }
-
-        Node(const std::initializer_list<Object::value_type> entries)
-            : Value(Object(entries))
-        {
-        }
 
         template<primitive T>
         Node(T &&value)
