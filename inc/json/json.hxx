@@ -4,10 +4,10 @@
 #include <json/forward.hxx>
 
 template<json::node N, typename T>
-bool from_json(N &&node, T &value) = delete;
+bool from_json(N &&node, T &value);
 
 template<typename T>
-void to_json(json::Node &node, T &&value) = delete;
+void to_json(json::Node &node, T &&value);
 
 namespace json
 {
