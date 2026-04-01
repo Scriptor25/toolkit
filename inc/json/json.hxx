@@ -151,12 +151,6 @@ namespace json
     std::istream &operator>>(std::istream &stream, Node &node);
 }
 
-template<typename T>
-bool from_json(const json::Node &node, T &value) = delete;
-
-template<typename T>
-void to_json(json::Node &node, T &&value) = delete;
-
 template<json::primitive T>
 bool from_json(const json::Node &node, T &value)
 {
