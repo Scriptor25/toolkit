@@ -221,7 +221,9 @@ json::Node::iterator json::Node::begin()
     return std::visit(
         []<typename T>(T &value) -> iterator
         {
-            if constexpr (std::same_as<std::decay_t<T>, Array> || std::same_as<std::decay_t<T>, Object>)
+            using U = std::decay_t<T>;
+
+            if constexpr (std::same_as<U, Array> || std::same_as<U, Object>)
                 return iterator(value.begin());
             else
                 throw std::runtime_error("type does not have `begin()`");
@@ -234,7 +236,9 @@ json::Node::iterator json::Node::end()
     return std::visit(
         []<typename T>(T &value) -> iterator
         {
-            if constexpr (std::same_as<std::decay_t<T>, Array> || std::same_as<std::decay_t<T>, Object>)
+            using U = std::decay_t<T>;
+
+            if constexpr (std::same_as<U, Array> || std::same_as<U, Object>)
                 return iterator(value.end());
             else
                 throw std::runtime_error("type does not have `end()`");
@@ -247,7 +251,9 @@ json::Node::const_iterator json::Node::begin() const
     return std::visit(
         []<typename T>(T &value) -> const_iterator
         {
-            if constexpr (std::same_as<std::decay_t<T>, Array> || std::same_as<std::decay_t<T>, Object>)
+            using U = std::decay_t<T>;
+
+            if constexpr (std::same_as<U, Array> || std::same_as<U, Object>)
                 return const_iterator(value.begin());
             else
                 throw std::runtime_error("type does not have `begin() const`");
@@ -260,7 +266,9 @@ json::Node::const_iterator json::Node::end() const
     return std::visit(
         []<typename T>(T &value) -> const_iterator
         {
-            if constexpr (std::same_as<std::decay_t<T>, Array> || std::same_as<std::decay_t<T>, Object>)
+            using U = std::decay_t<T>;
+
+            if constexpr (std::same_as<U, Array> || std::same_as<U, Object>)
                 return const_iterator(value.end());
             else
                 throw std::runtime_error("type does not have `end() const`");
@@ -273,26 +281,52 @@ json::Index json::Node::size() const
     return std::visit(
         []<typename T>(T &value) -> Index
         {
-            if constexpr (std::same_as<std::decay_t<T>, Array> || std::same_as<std::decay_t<T>, Object>)
+            using U = std::decay_t<T>;
+
+            if constexpr (std::same_as<U, Array> || std::same_as<U, Object>)
                 return value.size();
+            else if constexpr (std::same_as<U, Undefined>)
+                return 0;
             else
                 throw std::runtime_error("type does not have `size() const`");
         },
         Value);
 }
 
+static json::Node undefined;
+
 json::Node &json::Node::operator[](const Index index)
 {
-    return Get<Array>()[index];
+    return std::visit(
+        [&index]<typename T>(T &value) -> Node&
+        {
+            using U = std::decay_t<T>;
+
+            if constexpr (std::same_as<U, Array>)
+            {
+                if (index >= value.size())
+                    value.resize(index + 1);
+                return value[index];
+            }
+            else if constexpr (std::same_as<U, Undefined>)
+                return undefined;
+            else
+                throw std::runtime_error("type does not have `operator[](Index)`");
+        },
+        Value);
 }
 
 json::Node json::Node::operator[](const Index index) const
 {
     return std::visit(
-        [&index]<typename T>(T &value) -> Node
+        [&index]<typename T>(T &value) -> const Node&
         {
-            if constexpr (std::same_as<std::decay_t<T>, Array>)
-                return index < value.size() ? value[index] : Undefined();
+            using U = std::decay_t<T>;
+            
+            if constexpr (std::same_as<U, Array>)
+                return index < value.size() ? value[index] : undefined;
+            else if constexpr (std::same_as<U, Undefined>)
+                return undefined;
             else
                 throw std::runtime_error("type does not have `operator[](Index) const`");
         },
@@ -301,16 +335,32 @@ json::Node json::Node::operator[](const Index index) const
 
 json::Node &json::Node::operator[](const std::string &key)
 {
-    return Get<Object>()[key];
+    return std::visit(
+        [&key]<typename T>(T &value) -> Node&
+        {
+            using U = std::decay_t<T>;
+            
+            if constexpr (std::same_as<U, Object>)
+                return value[key];
+            else if constexpr (std::same_as<U, Undefined>)
+                return undefined;
+            else
+                throw std::runtime_error("type does not have `operator[](Key)`");
+        },
+        Value);
 }
 
 json::Node json::Node::operator[](const std::string &key) const
 {
     return std::visit(
-        [&key]<typename T>(T &value) -> Node
+        [&key]<typename T>(T &value) -> const Node&
         {
-            if constexpr (std::same_as<std::decay_t<T>, Object>)
-                return value.contains(key) ? value.at(key) : Undefined();
+            using U = std::decay_t<T>;
+            
+            if constexpr (std::same_as<U, Object>)
+                return value.contains(key) ? value.at(key) : undefined;
+            else if constexpr (std::same_as<U, Undefined>)
+                return undefined;
             else
                 throw std::runtime_error("type does not have `operator[](Key) const`");
         },
