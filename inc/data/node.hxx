@@ -8,10 +8,10 @@
 #include <variant>
 
 template<typename... V>
-std::ostream &operator<<(std::ostream &stream, const data::Node<V...> &node) = delete;
+std::ostream &operator<<(std::ostream &stream, const data::Node<V...> &node);
 
 template<typename... V>
-std::istream &operator>>(std::istream &stream, data::Node<V...> &node) = delete;
+std::istream &operator>>(std::istream &stream, data::Node<V...> &node);
 
 namespace data
 {
