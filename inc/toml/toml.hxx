@@ -67,6 +67,6 @@ struct data::NodeTraits<
 {
     using Integer = toml::Integer;
     using FloatingPoint = toml::FloatingPoint;
-};
 
-std::istream &operator>>(std::istream &stream, toml::Node &node);
+    static std::istream &parse(std::istream &stream, toml::Node &node);
+};

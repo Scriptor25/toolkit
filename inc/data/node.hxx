@@ -7,12 +7,6 @@
 #include <utility>
 #include <variant>
 
-template<typename... V>
-std::ostream &operator<<(std::ostream &stream, const data::Node<V...> &node);
-
-template<typename... V>
-std::istream &operator>>(std::istream &stream, data::Node<V...> &node);
-
 namespace data
 {
     template<typename N, typename T>
@@ -192,11 +186,6 @@ namespace data
             return Is<Undefined>();
         }
 
-        std::ostream &Print(std::ostream &stream, unsigned indent) const
-        {
-            return Traits::print_fn(stream, indent, Value);
-        }
-
         iterator begin()
         {
             return std::visit(
@@ -360,15 +349,19 @@ namespace data
     template<typename... V>
     std::ostream &operator<<(std::ostream &stream, const Node<V...> &node)
     {
-        using ::operator<<;
-        return stream << node;
+        using N = Node<V...>;
+        using T = N::Traits;
+
+        return T::print(stream, node);
     }
 
     template<typename... V>
     std::istream &operator>>(std::istream &stream, Node<V...> &node)
     {
-        using ::operator>>;
-        return stream >> node;
+        using N = Node<V...>;
+        using T = N::Traits;
+
+        return T::parse(stream, node);
     }
 }
 

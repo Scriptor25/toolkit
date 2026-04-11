@@ -20,13 +20,7 @@ static std::ostream &indent_depth(std::ostream &stream, const std::size_t indent
     return stream << std::string(indent * depth, ' ');
 }
 
-std::ostream &data::NodeTraits<
-    json::Null,
-    json::Boolean,
-    json::Integer,
-    json::FloatingPoint,
-    json::String
->::print_fn(std::ostream &stream, const unsigned indent, const json::Node::ValueType &value)
+static std::ostream &print_fn(std::ostream &stream, const unsigned indent, const json::Node::ValueType &value)
 {
     struct
     {
@@ -59,7 +53,7 @@ std::ostream &data::NodeTraits<
         {
             stream << '"';
 
-            for (const auto c : utf8::decode(value))
+            for (const auto c : data::utf8::decode(value))
                 switch (c)
                 {
                 case '"':
@@ -178,15 +172,27 @@ std::ostream &data::NodeTraits<
     return stream;
 }
 
-std::ostream &operator<<(std::ostream &stream, const json::Node &node)
+std::ostream &data::NodeTraits<
+    json::Null,
+    json::Boolean,
+    json::Integer,
+    json::FloatingPoint,
+    json::String
+>::print(std::ostream &stream, const json::Node &node)
 {
     const auto indent = stream.width();
     stream.width(0);
 
-    return node.Print(stream, indent);
+    return print_fn(stream, indent, node.Value);
 }
 
-std::istream &operator>>(std::istream &stream, json::Node &node)
+std::istream &data::NodeTraits<
+    json::Null,
+    json::Boolean,
+    json::Integer,
+    json::FloatingPoint,
+    json::String
+>::parse(std::istream &stream, json::Node &node)
 {
     json::Parser parser(stream);
     if (auto exp = parser.Parse())

@@ -33,8 +33,6 @@ struct data::NodeTraits<
     using Integer = json::Integer;
     using FloatingPoint = json::FloatingPoint;
 
-    static std::ostream &print_fn(std::ostream &stream, unsigned indent, const json::Node::ValueType &value);
+    static std::ostream &print(std::ostream &stream, const json::Node &node);
+    static std::istream &parse(std::istream &stream, json::Node &node);
 };
-
-std::ostream &operator<<(std::ostream &stream, const json::Node &node);
-std::istream &operator>>(std::istream &stream, json::Node &node);
