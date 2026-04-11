@@ -7,6 +7,12 @@
 #include <utility>
 #include <variant>
 
+template<typename... V>
+std::ostream &operator<<(std::ostream &stream, const data::Node<V...> &node) = delete;
+
+template<typename... V>
+std::istream &operator>>(std::istream &stream, data::Node<V...> &node) = delete;
+
 namespace data
 {
     template<typename N, typename T>
@@ -350,6 +356,20 @@ namespace data
 
         ValueType Value;
     };
+
+    template<typename... V>
+    std::ostream &operator<<(std::ostream &stream, const Node<V...> &node)
+    {
+        using ::operator<<;
+        return stream << node;
+    }
+
+    template<typename... V>
+    std::istream &operator>>(std::istream &stream, Node<V...> &node)
+    {
+        using ::operator>>;
+        return stream >> node;
+    }
 }
 
 template<data::node N>

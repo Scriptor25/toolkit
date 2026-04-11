@@ -17,6 +17,4 @@ int main()
     json::Node json = toml;
 
     std::cout << std::setw(2) << json << std::endl;
-
-
 }
