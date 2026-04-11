@@ -1,8 +1,9 @@
+#include <data/utf8.hxx>
 #include <json/json.hxx>
 #include <json/parser.hxx>
-#include <json/utf8.hxx>
 
 #include <iomanip>
+#include <iostream>
 #include <ostream>
 
 static auto &get_context_depth(std::ostream &stream)
@@ -12,72 +13,49 @@ static auto &get_context_depth(std::ostream &stream)
     return stream.iword(index);
 }
 
-static std::ostream &indent_depth(std::ostream &stream, std::size_t indent)
+static std::ostream &indent_depth(std::ostream &stream, const std::size_t indent)
 {
     const auto &depth = get_context_depth(stream);
 
-    const std::string buffer(indent * depth, ' ');
-
-    return stream << buffer;
+    return stream << std::string(indent * depth, ' ');
 }
 
-json::Node::Node(const NodeValue &value)
-    : Value(value)
-{
-}
-
-json::Node::Node(NodeValue &&value)
-    : Value(std::forward<NodeValue>(value))
-{
-}
-
-json::Node &json::Node::operator=(const NodeValue &value)
-{
-    Value = value;
-    return *this;
-}
-
-json::Node &json::Node::operator=(NodeValue &&value)
-{
-    Value = std::forward<NodeValue>(value);
-    return *this;
-}
-
-bool json::Node::operator!() const
-{
-    return Is<Undefined>();
-}
-
-std::ostream &json::Node::Print(std::ostream &stream, std::size_t indent) const
+std::ostream &data::NodeTraits<
+    json::Null,
+    json::Boolean,
+    json::Integer,
+    json::FloatingPoint,
+    json::String
+>::print_fn(std::ostream &stream, const unsigned indent, const json::Node::ValueType &value)
 {
     struct
     {
-        void operator()(Undefined) const
+        void operator()(json::Node::Undefined) const
         {
             stream << "<undefined>";
         }
 
-        void operator()(Null) const
+        void operator()(json::Null) const
         {
             stream << "null";
         }
 
-        void operator()(const Boolean value) const
+        void operator()(const json::Boolean value) const
         {
             stream << (value ? "true" : "false");
         }
 
-        void operator()(const Integer value) const
+        void operator()(const json::Integer value) const
         {
             stream << value;
         }
 
-        void operator()(const FloatingPoint value) const
+        void operator()(const json::FloatingPoint value) const
         {
             stream << std::scientific << value;
         }
 
-        void operator()(const String &value) const
+        void operator()(const json::String &value) const
         {
             stream << '"';
 
@@ -109,14 +87,14 @@ std::ostream &json::Node::Print(std::ostream &stream, std::size_t indent) const
                     if (0x20 <= c && c < 0x7F)
                         stream << static_cast<char>(c);
                     else
-                        stream << "\\u" << std::setw(4) << std::setfill('0') << static_cast<int>(c);
+                        stream << "\\u" << std::setw(4) << std::setfill('0') << std::hex << static_cast<int>(c);
                     break;
                 }
 
             stream << '"';
         }
 
-        void operator()(const Array &value) const
+        void operator()(const json::Node::Vec &value) const
         {
             if (indent)
             {
@@ -134,7 +112,7 @@ std::ostream &json::Node::Print(std::ostream &stream, std::size_t indent) const
                         stream << ',' << '\n';
                     if (value.size() > 1)
                         indent_depth(stream, indent);
-                    it->Print(stream, indent);
+                    print_fn(stream, indent, it->Value);
                 }
                 if (value.size() > 1)
                 {
@@ -150,13 +128,13 @@ std::ostream &json::Node::Print(std::ostream &stream, std::size_t indent) const
                 {
                     if (it != value.begin())
                         stream << ',';
-                    it->Print(stream, indent);
+                    print_fn(stream, indent, it->Value);
                 }
                 stream << ']';
             }
         }
 
-        void operator()(const Object &value) const
+        void operator()(const json::Node::Map &value) const
         {
             if (indent)
             {
@@ -170,7 +148,8 @@ std::ostream &json::Node::Print(std::ostream &stream, std::size_t indent) const
                 {
                     if (it != value.begin())
                         stream << ',' << '\n';
-                    it->second.Print(Node(it->first).Print(indent_depth(stream, indent), indent) << ": ", indent);
+                    print_fn(indent_depth(stream, indent), indent, it->first) << ": ";
+                    print_fn(stream, indent, it->second.Value);
                 }
                 depth--;
                 if (!value.empty())
@@ -184,7 +163,8 @@ std::ostream &json::Node::Print(std::ostream &stream, std::size_t indent) const
                 {
                     if (it != value.begin())
                         stream << ',';
-                    it->second.Print(Node(it->first).Print(stream, indent) << ':', indent);
+                    print_fn(stream, indent, it->first) << ':';
+                    print_fn(stream, indent, it->second.Value);
                 }
                 stream << '}';
             }
@@ -194,172 +174,24 @@ std::ostream &json::Node::Print(std::ostream &stream, std::size_t indent) const
         std::size_t indent;
     } visitor{ stream, indent };
 
-    std::visit(visitor, Value);
-
+    std::visit(visitor, value);
     return stream;
 }
 
-json::Node::iterator json::Node::begin()
+std::ostream &operator<<(std::ostream &stream, const json::Node &node)
 {
-    return std::visit(
-        []<typename T>(T &value) -> iterator
-        {
-            using U = std::decay_t<T>;
-
-            if constexpr (std::same_as<U, Array> || std::same_as<U, Object>)
-                return iterator(value.begin());
-            else
-                throw std::runtime_error("type does not have `begin()`");
-        },
-        Value);
-}
-
-json::Node::iterator json::Node::end()
-{
-    return std::visit(
-        []<typename T>(T &value) -> iterator
-        {
-            using U = std::decay_t<T>;
-
-            if constexpr (std::same_as<U, Array> || std::same_as<U, Object>)
-                return iterator(value.end());
-            else
-                throw std::runtime_error("type does not have `end()`");
-        },
-        Value);
-}
-
-json::Node::const_iterator json::Node::begin() const
-{
-    return std::visit(
-        []<typename T>(T &value) -> const_iterator
-        {
-            using U = std::decay_t<T>;
-
-            if constexpr (std::same_as<U, Array> || std::same_as<U, Object>)
-                return const_iterator(value.begin());
-            else
-                throw std::runtime_error("type does not have `begin() const`");
-        },
-        Value);
-}
-
-json::Node::const_iterator json::Node::end() const
-{
-    return std::visit(
-        []<typename T>(T &value) -> const_iterator
-        {
-            using U = std::decay_t<T>;
-
-            if constexpr (std::same_as<U, Array> || std::same_as<U, Object>)
-                return const_iterator(value.end());
-            else
-                throw std::runtime_error("type does not have `end() const`");
-        },
-        Value);
-}
-
-json::Index json::Node::size() const
-{
-    return std::visit(
-        []<typename T>(T &value) -> Index
-        {
-            using U = std::decay_t<T>;
-
-            if constexpr (std::same_as<U, Array> || std::same_as<U, Object>)
-                return value.size();
-            else if constexpr (std::same_as<U, Undefined>)
-                return 0;
-            else
-                throw std::runtime_error("type does not have `size() const`");
-        },
-        Value);
-}
-
-static json::Node undefined;
-
-json::Node &json::Node::operator[](const Index index)
-{
-    return std::visit(
-        [&index]<typename T>(T &value) -> Node&
-        {
-            using U = std::decay_t<T>;
-
-            if constexpr (std::same_as<U, Array>)
-            {
-                if (index >= value.size())
-                    value.resize(index + 1);
-                return value[index];
-            }
-            else if constexpr (std::same_as<U, Undefined>)
-                return undefined;
-            else
-                throw std::runtime_error("type does not have `operator[](Index)`");
-        },
-        Value);
-}
-
-json::Node json::Node::operator[](const Index index) const
-{
-    return std::visit(
-        [&index]<typename T>(T &value) -> const Node&
-        {
-            using U = std::decay_t<T>;
-            
-            if constexpr (std::same_as<U, Array>)
-                return index < value.size() ? value[index] : undefined;
-            else if constexpr (std::same_as<U, Undefined>)
-                return undefined;
-            else
-                throw std::runtime_error("type does not have `operator[](Index) const`");
-        },
-        Value);
-}
-
-json::Node &json::Node::operator[](const std::string &key)
-{
-    return std::visit(
-        [&key]<typename T>(T &value) -> Node&
-        {
-            using U = std::decay_t<T>;
-            
-            if constexpr (std::same_as<U, Object>)
-                return value[key];
-            else if constexpr (std::same_as<U, Undefined>)
-                return undefined;
-            else
-                throw std::runtime_error("type does not have `operator[](Key)`");
-        },
-        Value);
-}
-
-json::Node json::Node::operator[](const std::string &key) const
-{
-    return std::visit(
-        [&key]<typename T>(T &value) -> const Node&
-        {
-            using U = std::decay_t<T>;
-            
-            if constexpr (std::same_as<U, Object>)
-                return value.contains(key) ? value.at(key) : undefined;
-            else if constexpr (std::same_as<U, Undefined>)
-                return undefined;
-            else
-                throw std::runtime_error("type does not have `operator[](Key) const`");
-        },
-        Value);
-}
-
-std::ostream &json::operator<<(std::ostream &stream, const Node &node)
-{
-    auto indent = stream.width();
+    const auto indent = stream.width();
     stream.width(0);
 
     return node.Print(stream, indent);
 }
 
-std::istream &json::operator>>(std::istream &stream, Node &node)
+std::istream &operator>>(std::istream &stream, json::Node &node)
 {
-    node = Parser(stream).Parse();
+    json::Parser parser(stream);
+    if (auto exp = parser.Parse())
+        node = *exp;
+    else
+        std::cerr << exp.error() << std::endl;
     return stream;
 }

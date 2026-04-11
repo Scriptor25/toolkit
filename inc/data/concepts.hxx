@@ -1,25 +1,37 @@
 #pragma once
 
-#include <json/forward.hxx>
-
+#include <array>
 #include <concepts>
+#include <map>
 #include <optional>
 #include <set>
 #include <type_traits>
+#include <variant>
+#include <vector>
 
-namespace json
+namespace data
 {
-    template<typename T>
-    concept node = std::same_as<std::decay_t<T>, Node>;
+    template<typename... V>
+    struct Node;
+
+    template<typename>
+    struct is_node_t : std::false_type
+    {
+    };
+
+    template<typename... V>
+    struct is_node_t<Node<V...>> : std::true_type
+    {
+    };
 
     template<typename T>
-    concept node_value = std::same_as<std::decay_t<T>, NodeValue>;
+    concept node = is_node_t<std::decay_t<T>>::value;
 
-    template<typename T, typename V>
+    template<typename, typename>
     struct in_variant_t : std::false_type
     {
     };
-    
+
     template<typename T, typename... E>
     struct in_variant_t<T, std::variant<E...>> : std::disjunction<std::is_same<T, E>...>
     {
@@ -28,17 +40,23 @@ namespace json
     template<typename T, typename V>
     concept in_variant = in_variant_t<T, V>::value;
 
-    template<typename T>
-    concept primitive = in_variant<std::decay_t<T>, NodeValue>;
+    template<typename T, typename N>
+    concept decay_same_as = std::same_as<std::decay_t<T>, N>;
 
-    template<typename T>
-    concept assignable = !node<T> && !node_value<T> && !primitive<T>;
+    template<typename T, typename N>
+    concept node_value_of = std::same_as<std::decay_t<T>, typename N::ValueType>;
 
-    template<typename T>
-    concept integral = std::integral<std::decay_t<T>> && !primitive<T>;
+    template<typename T, typename N>
+    concept primitive = data::in_variant<std::decay_t<T>, typename N::ValueType>;
 
-    template<typename T>
-    concept floating_point = std::floating_point<std::decay_t<T>> && !primitive<T>;
+    template<typename T, typename N, typename V>
+    concept assignable = !decay_same_as<T, N> && !node_value_of<T, N> && !primitive<T, N>;
+
+    template<typename T, typename N>
+    concept integral = std::integral<std::decay_t<T>> && !primitive<T, N>;
+
+    template<typename T, typename N>
+    concept floating_point = std::floating_point<std::decay_t<T>> && !primitive<T, N>;
 
     template<typename>
     struct is_vector_t : std::false_type
@@ -51,7 +69,7 @@ namespace json
     };
 
     template<typename T>
-    concept vector = is_vector_t<std::decay_t<T>>::value && !primitive<T>;
+    concept vector = is_vector_t<std::decay_t<T>>::value;
 
     template<typename>
     struct is_set_t : std::false_type
@@ -90,7 +108,7 @@ namespace json
     };
 
     template<typename T>
-    concept map = is_map_t<std::decay_t<T>>::value && !primitive<T>;
+    concept map = is_map_t<std::decay_t<T>>::value;
 
     template<typename>
     struct is_optional_t : std::false_type
@@ -117,21 +135,4 @@ namespace json
 
     template<typename T>
     concept variant = is_variant_t<std::decay_t<T>>::value;
-
-    template<typename>
-    struct serializer
-    {
-    };
-
-    template<typename T>
-    concept enable_from_json = requires(Node &node, T &value)
-    {
-        serializer<std::decay_t<T>>::from_json(node, value);
-    };
-
-    template<typename T>
-    concept enable_to_json = requires(Node &node, T &&value)
-    {
-        serializer<std::decay_t<T>>::to_json(node, std::forward<T>(value));
-    };
 }

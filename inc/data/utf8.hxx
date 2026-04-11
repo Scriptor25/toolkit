@@ -3,7 +3,7 @@
 #include <concepts>
 #include <string>
 
-namespace json::utf8
+namespace data::utf8
 {
     template<typename T, typename E>
     concept same_as = std::same_as<std::decay_t<T>, std::decay_t<E>>;

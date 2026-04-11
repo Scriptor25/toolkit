@@ -1,6 +1,6 @@
+#include <data/utf8.hxx>
 #include <json/json.hxx>
 #include <json/parser.hxx>
-#include <json/utf8.hxx>
 
 #include <istream>
 
@@ -10,28 +10,31 @@ json::Parser::Parser(std::istream &stream)
 {
 }
 
-json::Node json::Parser::Parse()
+json::Exp<json::Node> json::Parser::Parse()
 {
-    Node node;
+    Exp<Node> exp;
 
     SkipWhitespace();
 
     switch (m_Buffer)
     {
     case 'n':
-        if (!Skip("null"))
-            return {};
-        node = nullptr;
+        if (Skip("null"))
+            exp = nullptr;
+        else
+            exp = Error("expected 'null'");
         break;
     case 'f':
-        if (!Skip("false"))
-            return {};
-        node = false;
+        if (Skip("false"))
+            exp = false;
+        else
+            exp = Error("expected 'false'");
         break;
     case 't':
-        if (!Skip("true"))
-            return {};
-        node = true;
+        if (Skip("true"))
+            exp = true;
+        else
+            exp = Error("expected 'true'");
         break;
     case '-':
     case '0':
@@ -44,16 +47,16 @@ json::Node json::Parser::Parse()
     case '7':
     case '8':
     case '9':
-        node = ParseNumber();
+        exp = ParseNumber();
         break;
     case '"':
-        node = ParseString();
+        exp = ParseString();
         break;
     case '[':
-        node = ParseArray();
+        exp = ParseArray();
         break;
     case '{':
-        node = ParseObject();
+        exp = ParseObject();
         break;
     default:
         break;
@@ -61,13 +64,13 @@ json::Node json::Parser::Parse()
 
     SkipWhitespace();
 
-    return node;
+    return exp;
 }
 
-json::Node json::Parser::ParseNumber()
+json::Exp<json::Node> json::Parser::ParseNumber()
 {
-    std::u32string buffer;
-    auto floating_point = false;
+    std::string buffer;
+    auto is_float = false;
 
     if (At('-'))
         buffer += Pop();
@@ -79,15 +82,15 @@ json::Node json::Parser::ParseNumber()
             buffer += Pop();
         while ('0' <= m_Buffer && m_Buffer <= '9');
     else
-        return {};
+        return Error("expected base 10 digit");
 
     if (At('.'))
     {
         buffer += Pop();
-        floating_point = true;
+        is_float = true;
 
         if (!('0' <= m_Buffer && m_Buffer <= '9'))
-            return {};
+            return Error("expected base 10 digit");
 
         do
             buffer += Pop();
@@ -97,31 +100,30 @@ json::Node json::Parser::ParseNumber()
     if (At('e') || At('E'))
     {
         buffer += Pop();
-        floating_point = true;
+        is_float = true;
 
         if (At('-') || At('+'))
             buffer += Pop();
 
         if (!('0' <= m_Buffer && m_Buffer <= '9'))
-            return {};
+            return Error("expected base 10 digit");
 
         do
             buffer += Pop();
         while ('0' <= m_Buffer && m_Buffer <= '9');
     }
 
-    if (floating_point)
-        return std::stold(utf8::encode(buffer), nullptr);
-
-    return std::stoll(utf8::encode(buffer), nullptr);
+    if (is_float)
+        return std::stold(buffer);
+    return std::stoll(buffer);
 }
 
-json::Node json::Parser::ParseString()
+json::Exp<json::Node> json::Parser::ParseString()
 {
     std::u32string value;
 
     if (!Skip('"'))
-        return {};
+        return Error("expected quote");
 
     while (!Skip('"'))
     {
@@ -160,25 +162,30 @@ json::Node json::Parser::ParseString()
         case 'u':
         {
             const auto hi = PopByte();
-            const auto lo = PopByte();
+            if (!hi)
+                return Error("{}", hi.error());
 
-            value.push_back((hi & 0xff) << 8 | lo & 0xff);
+            const auto lo = PopByte();
+            if (!lo)
+                return Error("{}", lo.error());
+
+            value.push_back((*hi & 0xff) << 8 | *lo & 0xff);
             break;
         }
         default:
-            return {};
+            return Error("expected escape sequence");
         }
     }
 
-    return utf8::encode(value);
+    return data::utf8::encode(std::move(value));
 }
 
-json::Node json::Parser::ParseArray()
+json::Exp<json::Node> json::Parser::ParseArray()
 {
-    Array nodes;
+    Node::Vec nodes;
 
     if (!Skip('['))
-        return {};
+        return Error("expected opening bracket");
 
     SkipWhitespace();
 
@@ -188,25 +195,25 @@ json::Node json::Parser::ParseArray()
         {
             auto element = Parse();
             if (!element)
-                return {};
+                return element;
 
-            nodes.push_back(std::move(element));
+            nodes.push_back(std::move(*element));
         }
         while (Skip(','));
 
         if (!Skip(']'))
-            return {};
+            return Error("expected closing bracket");
     }
 
     return std::move(nodes);
 }
 
-json::Node json::Parser::ParseObject()
+json::Exp<json::Node> json::Parser::ParseObject()
 {
-    Object nodes;
+    Node::Map nodes;
 
     if (!Skip('{'))
-        return {};
+        return Error("expected opening brace");
 
     SkipWhitespace();
 
@@ -218,23 +225,23 @@ json::Node json::Parser::ParseObject()
 
             const auto key = ParseString();
             if (!key)
-                return {};
+                return key;
 
             SkipWhitespace();
 
             if (!Skip(':'))
-                return {};
+                return Error("expected colon");
 
             auto value = Parse();
             if (!value)
-                return {};
+                return value;
 
-            nodes[key.Get<String>()] = std::move(value);
+            nodes[key->Get<String>()] = std::move(*value);
         }
         while (Skip(','));
 
         if (!Skip('}'))
-            return {};
+            return Error("expected closing brace");
     }
 
     return std::move(nodes);
@@ -252,7 +259,7 @@ char json::Parser::Pop()
     return static_cast<char>(buffer);
 }
 
-unsigned char json::Parser::PopHalfByte()
+json::Exp<unsigned char> json::Parser::PopHalfByte()
 {
     const auto c = Pop();
     if ('0' <= c && c <= '9')
@@ -261,15 +268,20 @@ unsigned char json::Parser::PopHalfByte()
         return c - 'A' + 10;
     if ('a' <= c && c <= 'f')
         return c - 'a' + 10;
-    return 0;
+    return Error("expected base 16 digit");
 }
 
-unsigned char json::Parser::PopByte()
+json::Exp<unsigned char> json::Parser::PopByte()
 {
     const auto hi = PopHalfByte();
-    const auto lo = PopHalfByte();
+    if (!hi)
+        return hi;
 
-    return (hi & 0xF) << 4 | lo & 0xF;
+    const auto lo = PopHalfByte();
+    if (!lo)
+        return lo;
+
+    return (*hi & 0xF) << 4 | *lo & 0xF;
 }
 
 bool json::Parser::At(const char c) const
