@@ -100,13 +100,18 @@ static std::ostream &print_fn(std::ostream &stream, const unsigned indent, const
                     stream << '\n';
                     depth++;
                 }
-                for (auto it = value.begin(); it != value.end(); ++it)
+                auto first = true;
+                for (auto &it : value)
                 {
-                    if (it != value.begin())
+                    if (!it)
+                        continue;
+                    if (first)
+                        first = false;
+                    else
                         stream << ',' << '\n';
                     if (value.size() > 1)
                         indent_depth(stream, indent);
-                    print_fn(stream, indent, it->Value);
+                    print_fn(stream, indent, it.Value);
                 }
                 if (value.size() > 1)
                 {
@@ -118,11 +123,16 @@ static std::ostream &print_fn(std::ostream &stream, const unsigned indent, const
             else
             {
                 stream << '[';
-                for (auto it = value.begin(); it != value.end(); ++it)
+                auto first = true;
+                for (auto &it : value)
                 {
-                    if (it != value.begin())
+                    if (!it)
+                        continue;
+                    if (first)
+                        first = false;
+                    else
                         stream << ',';
-                    print_fn(stream, indent, it->Value);
+                    print_fn(stream, indent, it.Value);
                 }
                 stream << ']';
             }
@@ -138,12 +148,17 @@ static std::ostream &print_fn(std::ostream &stream, const unsigned indent, const
                 if (!value.empty())
                     stream << '\n';
                 depth++;
-                for (auto it = value.begin(); it != value.end(); ++it)
+                auto first = true;
+                for (auto &it : value)
                 {
-                    if (it != value.begin())
+                    if (!it.second)
+                        continue;
+                    if (first)
+                        first = false;
+                    else
                         stream << ',' << '\n';
-                    print_fn(indent_depth(stream, indent), indent, it->first) << ": ";
-                    print_fn(stream, indent, it->second.Value);
+                    print_fn(indent_depth(stream, indent), indent, it.first) << ": ";
+                    print_fn(stream, indent, it.second.Value);
                 }
                 depth--;
                 if (!value.empty())
@@ -153,12 +168,17 @@ static std::ostream &print_fn(std::ostream &stream, const unsigned indent, const
             else
             {
                 stream << '{';
-                for (auto it = value.begin(); it != value.end(); ++it)
+                auto first = true;
+                for (auto &it : value)
                 {
-                    if (it != value.begin())
+                    if (!it.second)
+                        continue;
+                    if (first)
+                        first = false;
+                    else
                         stream << ',';
-                    print_fn(stream, indent, it->first) << ':';
-                    print_fn(stream, indent, it->second.Value);
+                    print_fn(stream, indent, it.first) << ':';
+                    print_fn(stream, indent, it.second.Value);
                 }
                 stream << '}';
             }
