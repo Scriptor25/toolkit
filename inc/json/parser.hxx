@@ -1,39 +1,30 @@
 #pragma once
 
+#include <data/result.hxx>
 #include <json/json.hxx>
 
-#include <expected>
 #include <format>
 
 namespace json
 {
-    template<typename T>
-    using Exp = std::expected<T, std::string>;
-
-    template<typename... Args>
-    auto Error(std::format_string<Args...> format, Args &&... args)
-    {
-        return std::unexpected{ std::format(std::move(format), std::forward<Args>(args)...) };
-    }
-
     class Parser final
     {
     public:
         explicit Parser(std::istream &stream);
 
-        Exp<Node> Parse();
+        data::result<Node> Parse();
 
     protected:
-        Exp<Node> ParseNumber();
-        Exp<Node> ParseString();
-        Exp<Node> ParseArray();
-        Exp<Node> ParseObject();
+        data::result<Node> ParseNumber();
+        data::result<Node> ParseString();
+        data::result<Node> ParseArray();
+        data::result<Node> ParseObject();
 
         void Get();
         char Pop();
 
-        Exp<unsigned char> PopHalfByte();
-        Exp<unsigned char> PopByte();
+        data::result<uint8_t> PopHalfByte();
+        data::result<uint8_t> PopByte();
 
         [[nodiscard]] bool At(char c) const;
 

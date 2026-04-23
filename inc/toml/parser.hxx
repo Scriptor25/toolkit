@@ -1,21 +1,12 @@
 #pragma once
 
+#include <data/result.hxx>
 #include <toml/toml.hxx>
 
-#include <expected>
 #include <format>
 
 namespace toml
 {
-    template<typename T>
-    using Exp = std::expected<T, std::string>;
-
-    template<typename... Args>
-    auto Error(std::format_string<Args...> format, Args &&... args)
-    {
-        return std::unexpected{ std::format(std::move(format), std::forward<Args>(args)...) };
-    }
-
     class Parser final
     {
         using Key = std::vector<data::Key>;
@@ -23,31 +14,31 @@ namespace toml
     public:
         explicit Parser(std::istream &stream);
 
-        Exp<Node> Parse();
+        data::result<Node> Parse();
 
     protected:
-        Exp<Node> ParseValue();
+        data::result<Node> ParseValue();
 
-        Exp<Node> ParseNumber();
-        Exp<Node> ParseString();
-        Exp<Node> ParseLocalDate();
-        Exp<Node> ParseLocalTime();
-        Exp<Node> ParseDateTime();
-        Exp<Node> ParseArray();
-        Exp<Node> ParseTable();
+        data::result<Node> ParseNumber();
+        data::result<Node> ParseString();
+        data::result<Node> ParseLocalDate();
+        data::result<Node> ParseLocalTime();
+        data::result<Node> ParseDateTime();
+        data::result<Node> ParseArray();
+        data::result<Node> ParseTable();
 
-        Exp<Key> ParseKey();
+        data::result<Key> ParseKey();
 
-        static Exp<Node *> MakeNodeKey(Node &node, const Key &key);
-        static Exp<Node *> MakeNodeKey(Table &nodes, const Key &key);
+        static data::result<Node *> MakeNodeKey(Node &node, const Key &key);
+        static data::result<Node *> MakeNodeKey(Table &nodes, const Key &key);
 
         void Get();
         char Pop();
 
         [[nodiscard]] char Peek() const;
 
-        Exp<unsigned char> PopHalfByte();
-        Exp<unsigned char> PopByte();
+        data::result<uint8_t> PopHalfByte();
+        data::result<uint8_t> PopByte();
 
         [[nodiscard]] bool At(int c) const;
         [[nodiscard]] bool AtKey() const;

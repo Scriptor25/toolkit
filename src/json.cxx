@@ -273,13 +273,13 @@ std::istream &data::NodeTraits<
 >::parse(std::istream &stream, json::Node &node)
 {
     json::Parser parser(stream);
-    if (auto exp = parser.Parse())
+    if (auto result = parser.Parse())
     {
-        node = *exp;
+        node = *std::move(result);
     }
     else
     {
-        std::cerr << exp.error() << std::endl;
+        std::cerr << result.error() << std::endl;
     }
     return stream;
 }
