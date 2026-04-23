@@ -3,6 +3,7 @@
 #include <format>
 #include <stdexcept>
 #include <string>
+#include <type_traits>
 #include <variant>
 
 namespace data

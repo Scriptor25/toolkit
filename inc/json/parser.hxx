@@ -3,7 +3,7 @@
 #include <data/result.hxx>
 #include <json/json.hxx>
 
-#include <format>
+#include <cstdint>
 
 namespace json
 {

@@ -3,7 +3,7 @@
 #include <data/result.hxx>
 #include <toml/toml.hxx>
 
-#include <format>
+#include <cstdint>
 
 namespace toml
 {
