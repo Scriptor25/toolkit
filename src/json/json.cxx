@@ -1,4 +1,5 @@
-#include <data/utf8.hxx>
+#include <toolkit/utf8.hxx>
+
 #include <json/parser.hxx>
 
 #include <iomanip>
@@ -52,7 +53,7 @@ static std::ostream &print_fn(std::ostream &stream, const unsigned indent, const
         {
             stream << '"';
 
-            for (const auto c : data::utf8::decode(value))
+            for (const auto c : toolkit::utf8::decode(value))
             {
                 switch (c)
                 {

@@ -1,4 +1,5 @@
-#include <data/utf8.hxx>
+#include <toolkit/utf8.hxx>
+
 #include <json/parser.hxx>
 
 #include <istream>
@@ -9,9 +10,9 @@ json::Parser::Parser(std::istream &stream)
 {
 }
 
-data::result<json::Node> json::Parser::Parse()
+toolkit::result<json::Node> json::Parser::Parse()
 {
-    data::result<Node> exp;
+    toolkit::result<Node> exp;
 
     SkipWhitespace();
 
@@ -24,7 +25,7 @@ data::result<json::Node> json::Parser::Parse()
         }
         else
         {
-            exp = data::make_error("expected 'null'");
+            exp = toolkit::make_error("expected 'null'");
         }
         break;
     case 'f':
@@ -34,7 +35,7 @@ data::result<json::Node> json::Parser::Parse()
         }
         else
         {
-            exp = data::make_error("expected 'false'");
+            exp = toolkit::make_error("expected 'false'");
         }
         break;
     case 't':
@@ -44,7 +45,7 @@ data::result<json::Node> json::Parser::Parse()
         }
         else
         {
-            exp = data::make_error("expected 'true'");
+            exp = toolkit::make_error("expected 'true'");
         }
         break;
     case '-':
@@ -78,7 +79,7 @@ data::result<json::Node> json::Parser::Parse()
     return exp;
 }
 
-data::result<json::Node> json::Parser::ParseNumber()
+toolkit::result<json::Node> json::Parser::ParseNumber()
 {
     std::string buffer;
     auto is_float = false;
@@ -102,7 +103,7 @@ data::result<json::Node> json::Parser::ParseNumber()
     }
     else
     {
-        return data::make_error("expected base 10 digit");
+        return toolkit::make_error("expected base 10 digit");
     }
 
     if (At('.'))
@@ -112,7 +113,7 @@ data::result<json::Node> json::Parser::ParseNumber()
 
         if (!('0' <= m_Buffer && m_Buffer <= '9'))
         {
-            return data::make_error("expected base 10 digit");
+            return toolkit::make_error("expected base 10 digit");
         }
 
         do
@@ -134,7 +135,7 @@ data::result<json::Node> json::Parser::ParseNumber()
 
         if (!('0' <= m_Buffer && m_Buffer <= '9'))
         {
-            return data::make_error("expected base 10 digit");
+            return toolkit::make_error("expected base 10 digit");
         }
 
         do
@@ -152,13 +153,13 @@ data::result<json::Node> json::Parser::ParseNumber()
     return { std::stoll(buffer) };
 }
 
-data::result<json::Node> json::Parser::ParseString()
+toolkit::result<json::Node> json::Parser::ParseString()
 {
     std::u32string value;
 
     if (!Skip('"'))
     {
-        return data::make_error("expected quote");
+        return toolkit::make_error("expected quote");
     }
 
     while (!Skip('"'))
@@ -200,33 +201,33 @@ data::result<json::Node> json::Parser::ParseString()
             const auto hi = PopByte();
             if (!hi)
             {
-                return data::make_error("{}", hi.error());
+                return toolkit::make_error("{}", hi.error());
             }
 
             const auto lo = PopByte();
             if (!lo)
             {
-                return data::make_error("{}", lo.error());
+                return toolkit::make_error("{}", lo.error());
             }
 
             value.push_back((*hi & 0xff) << 8 | *lo & 0xff);
             break;
         }
         default:
-            return data::make_error("expected escape sequence");
+            return toolkit::make_error("expected escape sequence");
         }
     }
 
-    return { data::utf8::encode(std::move(value)) };
+    return { toolkit::utf8::encode(std::move(value)) };
 }
 
-data::result<json::Node> json::Parser::ParseArray()
+toolkit::result<json::Node> json::Parser::ParseArray()
 {
     Array nodes;
 
     if (!Skip('['))
     {
-        return data::make_error("expected opening bracket");
+        return toolkit::make_error("expected opening bracket");
     }
 
     SkipWhitespace();
@@ -247,20 +248,20 @@ data::result<json::Node> json::Parser::ParseArray()
 
         if (!Skip(']'))
         {
-            return data::make_error("expected closing bracket");
+            return toolkit::make_error("expected closing bracket");
         }
     }
 
     return { std::move(nodes) };
 }
 
-data::result<json::Node> json::Parser::ParseObject()
+toolkit::result<json::Node> json::Parser::ParseObject()
 {
     Object nodes;
 
     if (!Skip('{'))
     {
-        return data::make_error("expected opening brace");
+        return toolkit::make_error("expected opening brace");
     }
 
     SkipWhitespace();
@@ -281,7 +282,7 @@ data::result<json::Node> json::Parser::ParseObject()
 
             if (!Skip(':'))
             {
-                return data::make_error("expected colon");
+                return toolkit::make_error("expected colon");
             }
 
             auto value = Parse();
@@ -296,7 +297,7 @@ data::result<json::Node> json::Parser::ParseObject()
 
         if (!Skip('}'))
         {
-            return data::make_error("expected closing brace");
+            return toolkit::make_error("expected closing brace");
         }
     }
 
@@ -315,7 +316,7 @@ char json::Parser::Pop()
     return static_cast<char>(buffer);
 }
 
-data::result<uint8_t> json::Parser::PopHalfByte()
+toolkit::result<uint8_t> json::Parser::PopHalfByte()
 {
     const auto c = Pop();
     if ('0' <= c && c <= '9')
@@ -330,10 +331,10 @@ data::result<uint8_t> json::Parser::PopHalfByte()
     {
         return c - 'a' + 10;
     }
-    return data::make_error("expected base 16 digit");
+    return toolkit::make_error("expected base 16 digit");
 }
 
-data::result<uint8_t> json::Parser::PopByte()
+toolkit::result<uint8_t> json::Parser::PopByte()
 {
     auto hi = PopHalfByte();
     if (!hi)

@@ -1,6 +1,7 @@
 #pragma once
 
-#include <data/result.hxx>
+#include <toolkit/result.hxx>
+
 #include <json/json.hxx>
 
 #include <cstdint>
@@ -12,19 +13,19 @@ namespace json
     public:
         explicit Parser(std::istream &stream);
 
-        data::result<Node> Parse();
+        toolkit::result<Node> Parse();
 
     protected:
-        data::result<Node> ParseNumber();
-        data::result<Node> ParseString();
-        data::result<Node> ParseArray();
-        data::result<Node> ParseObject();
+        toolkit::result<Node> ParseNumber();
+        toolkit::result<Node> ParseString();
+        toolkit::result<Node> ParseArray();
+        toolkit::result<Node> ParseObject();
 
         void Get();
         char Pop();
 
-        data::result<uint8_t> PopHalfByte();
-        data::result<uint8_t> PopByte();
+        toolkit::result<uint8_t> PopHalfByte();
+        toolkit::result<uint8_t> PopByte();
 
         [[nodiscard]] bool At(char c) const;
 

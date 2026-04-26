@@ -1,61 +1,15 @@
 #pragma once
 
+#include <toolkit/templates.hxx>
+
 #include <format>
 #include <stdexcept>
 #include <string>
 #include <type_traits>
 #include <variant>
 
-namespace data
+namespace toolkit
 {
-    template<typename, typename T>
-    struct copy_cv
-    {
-        using type = T;
-    };
-
-    template<typename F, typename T>
-    struct copy_cv<const F, T>
-    {
-        using type = std::add_const_t<T>;
-    };
-
-    template<typename F, typename T>
-    struct copy_cv<volatile F, T>
-    {
-        using type = std::add_volatile_t<T>;
-    };
-
-    template<typename F, typename T>
-    struct copy_cv<const volatile F, T>
-    {
-        using type = std::add_cv_t<T>;
-    };
-
-    template<typename F, typename T>
-    using copy_cv_t = copy_cv<F, T>::type;
-
-    template<typename F, typename T>
-    struct copy_cvref
-    {
-        using type = copy_cv_t<std::remove_reference_t<F>, T>;
-    };
-
-    template<typename F, typename T>
-    struct copy_cvref<F &, T>
-    {
-        using type = std::add_lvalue_reference_t<copy_cv_t<std::remove_reference_t<F>, T>>;
-    };
-
-    template<typename F, typename T>
-    struct copy_cvref<F &&, T>
-    {
-        using type = std::add_rvalue_reference_t<copy_cv_t<std::remove_reference_t<F>, T>>;
-    };
-
-    template<typename F, typename T>
-    using copy_cvref_t = copy_cvref<F, T>::type;
-
     template<typename, typename>
     class result;
 
@@ -70,10 +24,10 @@ namespace data
     };
 
     template<typename T>
-    concept is_result_v = is_result<T>::value;
+    concept result_type = is_result<T>::value;
 
     template<typename E>
-    struct error_result
+    struct result_error
     {
         E value;
     };
@@ -83,7 +37,7 @@ namespace data
     {
     public:
         using value_type = std::decay_t<T>;
-        using error_type = error_result<std::decay_t<E>>;
+        using error_type = result_error<std::decay_t<E>>;
 
         result()
             : container(value_type{})
@@ -192,14 +146,14 @@ namespace data
             throw std::runtime_error(std::get<error_type>(container).value);
         }
 
-        auto *operator->() &
+        auto *operator->()
         {
             if (const auto ptr = std::get_if<value_type>(&container))
                 return ptr;
             throw std::runtime_error(std::get<error_type>(container).value);
         }
 
-        auto *operator->() const &
+        auto *operator->() const
         {
             if (const auto ptr = std::get_if<value_type>(&container))
                 return ptr;
@@ -217,11 +171,6 @@ namespace data
         }
 
         auto &&value() &&
-        {
-            return std::get<value_type>(std::move(container));
-        }
-
-        auto &&value() const &&
         {
             return std::get<value_type>(std::move(container));
         }
@@ -283,7 +232,7 @@ namespace data
         {
             using A = copy_cvref_t<S, value_type>;
             using R = std::invoke_result_t<F &&, A>;
-            static_assert(is_result_v<R>);
+            static_assert(result_type<R>);
 
             if (auto *ptr = std::get_if<value_type>(&s.value))
                 return std::forward<F>(f)(std::forward<A>(*ptr));
@@ -296,7 +245,7 @@ namespace data
         {
             using A = copy_cvref_t<S, error_type>;
             using R = std::invoke_result_t<F &&, A>;
-            static_assert(is_result_v<R>);
+            static_assert(result_type<R>);
 
             if (auto *ptr = std::get_if<error_type>(&s.value))
                 return std::forward<F>(f)(std::forward<A>(*ptr));
@@ -310,6 +259,6 @@ namespace data
     template<typename... A>
     auto make_error(std::format_string<A...> fmt, A &&... args)
     {
-        return error_result{ std::format(std::move(fmt), std::forward<A>(args)...) };
+        return result_error{ std::format(std::move(fmt), std::forward<A>(args)...) };
     }
 }

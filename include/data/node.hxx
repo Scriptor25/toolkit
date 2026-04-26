@@ -1,6 +1,7 @@
 #pragma once
 
-#include <data/concepts.hxx>
+#include <toolkit/templates.hxx>
+
 #include <data/data.hxx>
 #include <data/serializer.hxx>
 
@@ -9,6 +10,37 @@
 
 namespace data
 {
+    template<typename... V>
+    struct Node;
+
+    template<typename>
+    struct is_node_t : std::false_type
+    {
+    };
+
+    template<typename... V>
+    struct is_node_t<Node<V...>> : std::true_type
+    {
+    };
+
+    template<typename T>
+    concept node = is_node_t<std::decay_t<T>>::value;
+
+    template<typename T, typename N>
+    concept node_value_of = std::same_as<std::decay_t<T>, typename N::ValueType>;
+
+    template<typename T, typename N>
+    concept primitive = toolkit::in_variant<std::decay_t<T>, typename N::ValueType>;
+
+    template<typename T, typename N, typename V>
+    concept assignable = !toolkit::same_as<T, N> && !node_value_of<T, N> && !primitive<T, N>;
+
+    template<typename T, typename N>
+    concept integral = std::integral<std::decay_t<T>> && !primitive<T, N>;
+
+    template<typename T, typename N>
+    concept floating_point = std::floating_point<std::decay_t<T>> && !primitive<T, N>;
+
     template<typename... V>
     struct Node
     {
@@ -355,7 +387,7 @@ bool from_data(const N &node, N &value)
     return true;
 }
 
-template<data::node N, data::decay_same_as<N> T>
+template<data::node N, toolkit::same_as<N> T>
 void to_data(N &node, T &&value)
 {
     node = std::forward<T>(value);
@@ -432,7 +464,7 @@ bool from_data(const N &node, std::vector<T> &value)
     return ok;
 }
 
-template<data::node N, data::vector T>
+template<data::node N, toolkit::vector_type T>
 void to_data(N &node, T &&value)
 {
     using Vec = N::Vec;
@@ -460,7 +492,7 @@ bool from_data(const N &node, std::array<T, S> &value)
     return ok;
 }
 
-template<data::node N, data::array T>
+template<data::node N, toolkit::array_type T>
 void to_data(N &node, T &&value)
 {
     using Vec = N::Vec;
@@ -483,7 +515,7 @@ bool from_data(const N &node, std::set<T> &value)
     return false;
 }
 
-template<data::node N, data::set T>
+template<data::node N, toolkit::set_type T>
 void to_data(N &node, T &&value)
 {
     node = std::vector(value.begin(), value.end());
@@ -504,7 +536,7 @@ bool from_data(const N &node, std::map<data::Key, T> &value)
     return ok;
 }
 
-template<data::node N, data::map T>
+template<data::node N, toolkit::map_type T>
 void to_data(N &node, T &&value)
 {
     using Map = N::Map;
@@ -533,7 +565,7 @@ bool from_data(const N &node, std::optional<T> &value)
     return false;
 }
 
-template<data::node N, data::optional T>
+template<data::node N, toolkit::optional_type T>
 void to_data(N &node, T &&value)
 {
     if (value.has_value())
@@ -561,7 +593,7 @@ bool from_data(const N &node, std::variant<T...> &value)
     return (try_from_json.template operator()<T>() || ...);
 }
 
-template<data::node N, data::variant T>
+template<data::node N, toolkit::variant_type T>
 void to_data(N &node, T &&value)
 {
     std::visit(

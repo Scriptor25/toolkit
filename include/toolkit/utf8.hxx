@@ -1,13 +1,11 @@
 #pragma once
 
-#include <concepts>
+#include <toolkit/templates.hxx>
+
 #include <string>
 
-namespace data::utf8
+namespace toolkit::utf8
 {
-    template<typename T, typename E>
-    concept same_as = std::same_as<std::decay_t<T>, std::decay_t<E>>;
-
     template<same_as<std::u32string> T>
     std::string encode(T &&str)
     {

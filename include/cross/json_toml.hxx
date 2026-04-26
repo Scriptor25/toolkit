@@ -1,6 +1,6 @@
 #pragma once
 
-#include <data/serializer.hxx>
+#include <../data/serializer.hxx>
 #include <json/json.hxx>
 #include <toml/toml.hxx>
 
@@ -21,7 +21,7 @@ struct data::serializer<toml::LocalDate>
         return ok;
     }
 
-    template<decay_same_as<toml::LocalDate> T>
+    template<toolkit::same_as<toml::LocalDate> T>
     static void to_data(json::Node &node, T &&value)
     {
         node = json::Object
@@ -51,7 +51,7 @@ struct data::serializer<toml::LocalTime>
         return ok;
     }
 
-    template<decay_same_as<toml::LocalTime> T>
+    template<toolkit::same_as<toml::LocalTime> T>
     static void to_data(json::Node &node, T &&value)
     {
         node = json::Object
@@ -80,7 +80,7 @@ struct data::serializer<toml::DateTime::TimeOffset>
         return ok;
     }
 
-    template<decay_same_as<toml::DateTime::TimeOffset> T>
+    template<toolkit::same_as<toml::DateTime::TimeOffset> T>
     static void to_data(json::Node &node, T &&value)
     {
         node = json::Object
@@ -108,7 +108,7 @@ struct data::serializer<toml::DateTime>
         return ok;
     }
 
-    template<decay_same_as<toml::DateTime> T>
+    template<toolkit::same_as<toml::DateTime> T>
     static void to_data(json::Node &node, T &&value)
     {
         node = json::Object
@@ -128,7 +128,7 @@ struct data::serializer<toml::Node>
         return node >> value.Value;
     }
 
-    template<decay_same_as<toml::Node> T>
+    template<toolkit::same_as<toml::Node> T>
     static void to_data(json::Node &node, T &&value)
     {
         node = value.Value;
@@ -148,7 +148,7 @@ struct data::serializer<std::nullptr_t>
         return false;
     }
 
-    template<decay_same_as<std::nullptr_t> T>
+    template<toolkit::same_as<std::nullptr_t> T>
     static void to_data(toml::Node &node, T &&)
     {
         node = toml::Undefined();
@@ -163,7 +163,7 @@ struct data::serializer<json::Node>
         return node >> value.Value;
     }
 
-    template<decay_same_as<json::Node> T>
+    template<toolkit::same_as<json::Node> T>
     static void to_data(toml::Node &node, T &&value)
     {
         node = value.Value;
