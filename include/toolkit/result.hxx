@@ -39,11 +39,12 @@ namespace toolkit
         friend class result;
 
     public:
+        using value_type = std::monostate;
         using error_value_type = std::decay_t<E>;
         using error_type = result_error<error_value_type>;
 
         result()
-            : container(std::nullopt)
+            : container(value_type{})
         {
         }
 
@@ -93,7 +94,7 @@ namespace toolkit
 
         result &operator=(result &&other) noexcept
         {
-            std::swap(container, other.container);
+            container = std::move(other.container);
             return *this;
         }
 
@@ -106,12 +107,12 @@ namespace toolkit
 
         explicit operator bool() const
         {
-            return !container.has_value();
+            return std::holds_alternative<value_type>(container);
         }
 
         bool operator!() const
         {
-            return container.has_value();
+            return std::holds_alternative<error_type>(container);
         }
 
         bool operator<=>(const result &other) const
@@ -121,17 +122,17 @@ namespace toolkit
 
         auto &&error() &
         {
-            return container.value().message;
+            return std::get<error_type>(container).message;
         }
 
         auto &&error() const &
         {
-            return container.value().message;
+            return std::get<error_type>(container).message;
         }
 
         auto &&error() &&
         {
-            return std::move(container).value().message;
+            return std::get<error_type>(std::move(container)).message;
         }
 
         template<typename F>
@@ -177,10 +178,10 @@ namespace toolkit
             using R = std::invoke_result_t<F &&>;
             static_assert(result_type<R>);
 
-            if (!s.container.has_value())
+            if (std::holds_alternative<value_type>(s.container))
                 return std::forward<F>(f)();
 
-            return R(std::forward<S>(s).container.value());
+            return R(std::get<error_type>(std::forward<S>(s).container));
         }
 
         template<typename S, typename F>
@@ -190,13 +191,13 @@ namespace toolkit
             using R = std::invoke_result_t<F &&, A>;
             static_assert(result_type<R>);
 
-            if (s.container.has_value())
-                return std::forward<F>(f)(std::forward<A>(s.container.value().message));
+            if (auto *ptr = std::get_if<error_type>(&s.container))
+                return std::forward<F>(f)(std::forward<A>(ptr->message));
 
             return R();
         }
 
-        std::optional<error_type> container;
+        std::variant<value_type, error_type> container;
     };
 
     template<typename T, typename E>
@@ -283,7 +284,7 @@ namespace toolkit
 
         result &operator=(result &&other) noexcept
         {
-            std::swap(container, other.container);
+            container = std::move(other.container);
             return *this;
         }
 
