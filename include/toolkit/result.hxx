@@ -35,6 +35,9 @@ namespace toolkit
     template<typename E>
     class result<void, E>
     {
+        template<typename, typename>
+        friend class result;
+
     public:
         using error_value_type = std::decay_t<E>;
         using error_type = result_error<error_value_type>;
@@ -64,6 +67,12 @@ namespace toolkit
         {
         }
 
+        template<result_type R>
+        result(R &&r)
+            : container(std::get<error_type>(std::forward<R>(r).container))
+        {
+        }
+
         result &operator=(const error_type &error)
         {
             container = error;
@@ -85,6 +94,13 @@ namespace toolkit
         result &operator=(result &&other) noexcept
         {
             std::swap(container, other.container);
+            return *this;
+        }
+
+        template<result_type R>
+        result &operator=(R &&r)
+        {
+            container = std::get<error_type>(std::forward<R>(r).container);
             return *this;
         }
 
@@ -186,6 +202,9 @@ namespace toolkit
     template<typename T, typename E>
     class result
     {
+        template<typename, typename>
+        friend class result;
+
     public:
         using value_type = std::decay_t<T>;
         using error_value_type = std::decay_t<E>;
@@ -226,6 +245,12 @@ namespace toolkit
         {
         }
 
+        template<result_type R>
+        result(R &&r)
+            : container(std::get<error_type>(std::forward<R>(r).container))
+        {
+        }
+
         result &operator=(const value_type &value)
         {
             container = value;
@@ -259,6 +284,13 @@ namespace toolkit
         result &operator=(result &&other) noexcept
         {
             std::swap(container, other.container);
+            return *this;
+        }
+
+        template<result_type R>
+        result &operator=(R &&r)
+        {
+            container = std::get<error_type>(std::forward<R>(r).container);
             return *this;
         }
 
