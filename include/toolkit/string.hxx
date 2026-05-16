@@ -6,7 +6,7 @@
 namespace toolkit
 {
     template<typename S, typename D>
-    void split(std::vector<S> &vec, S &&str, D delim)
+    void split(std::vector<std::decay_t<S>> &vec, S &&str, D delim)
     {
         vec.clear();
 
@@ -20,9 +20,9 @@ namespace toolkit
     }
 
     template<typename S, typename D>
-    std::vector<S> split(S &&str, D delim)
+    std::vector<std::decay_t<S>> split(S &&str, D delim)
     {
-        std::vector<S> vec;
+        std::vector<std::decay_t<S>> vec;
 
         size_t b{}, e{};
         for (; (e = str.find(delim, b)) != S::npos; b = e)
@@ -68,7 +68,9 @@ namespace toolkit
     template<typename S>
     void trim(S &dst, S &&src)
     {
-        typename S::iterator begin, end;
+        using I = std::decay_t<S>::iterator;
+
+        I begin, end;
 
         for (auto it = src.begin(); it != src.end(); ++it)
             if (*it > 0x20)
@@ -90,7 +92,9 @@ namespace toolkit
     template<typename S>
     S trim(S &&src)
     {
-        typename S::iterator begin, end;
+        using I = std::decay_t<S>::iterator;
+
+        I begin, end;
 
         for (auto it = src.begin(); it != src.end(); ++it)
             if (*it > 0x20)
