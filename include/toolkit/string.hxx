@@ -6,7 +6,7 @@
 namespace toolkit
 {
     template<typename S, typename D>
-    void split(std::vector<S> &vec, const S &str, D delim)
+    void split(std::vector<S> &vec, S &&str, D delim)
     {
         vec.clear();
 
@@ -20,7 +20,7 @@ namespace toolkit
     }
 
     template<typename S, typename D>
-    std::vector<S> split(const S &str, D delim)
+    std::vector<S> split(S &&str, D delim)
     {
         std::vector<S> vec;
 
@@ -66,7 +66,7 @@ namespace toolkit
     }
 
     template<typename S>
-    void trim(S &dst, const S &src)
+    void trim(S &dst, S &&src)
     {
         typename S::iterator begin, end;
 
@@ -88,7 +88,7 @@ namespace toolkit
     }
 
     template<typename S>
-    S trim(const S &src)
+    S trim(S &&src)
     {
         typename S::iterator begin, end;
 
