@@ -3,8 +3,8 @@
 
 #include <iostream>
 
-toolkit::arg_manifest::arg_manifest(std::vector<arg_entry> entries)
-    : entries(std::move(entries))
+toolkit::arg_manifest::arg_manifest(std::vector<arg_entry> arg_entries)
+    : entries(std::move(arg_entries))
 {
     for (const auto &entry : entries)
         for (auto pattern : entry.patterns)
