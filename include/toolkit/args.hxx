@@ -28,6 +28,13 @@ namespace toolkit
         bool get(std::string_view key, std::string_view &value) const;
         void get_all(std::string_view key, std::vector<std::string_view> &value) const;
 
+        bool empty() const;
+        size_t size() const;
+        const std::string_view &operator[](size_t index) const;
+
+        std::vector<std::string_view>::const_iterator begin() const;
+        std::vector<std::string_view>::const_iterator end() const;
+
         std::string_view file;
         std::vector<std::string_view> positional;
         std::unordered_set<std::string_view> flags;

@@ -39,6 +39,31 @@ void toolkit::arg_context::get_all(const std::string_view key, std::vector<std::
     value.clear();
 }
 
+bool toolkit::arg_context::empty() const
+{
+    return positional.empty();
+}
+
+size_t toolkit::arg_context::size() const
+{
+    return positional.size();
+}
+
+const std::string_view &toolkit::arg_context::operator[](const size_t index) const
+{
+    return positional[index];
+}
+
+std::vector<std::string_view>::const_iterator toolkit::arg_context::begin() const
+{
+    return positional.begin();
+}
+
+std::vector<std::string_view>::const_iterator toolkit::arg_context::end() const
+{
+    return positional.end();
+}
+
 void toolkit::arg_parse(arg_context &context, const arg_manifest &manifest, const int argc, const char *const *argv)
 {
     const std::vector<std::string_view> args(argv, argv + argc);
