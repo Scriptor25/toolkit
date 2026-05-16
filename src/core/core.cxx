@@ -44,12 +44,13 @@ void toolkit::arg_parse(arg_context &context, const arg_manifest &manifest, cons
     const std::vector<std::string_view> args(argv, argv + argc);
 
     context.file = args[0];
-
-    std::vector<std::string_view> undefined;
+    context.positional.clear();
+    context.flags.clear();
+    context.values.clear();
 
     for (size_t i = 1; i < args.size(); ++i)
     {
-        auto &arg = args[i];
+        auto arg = args[i];
 
         if (auto *entry = manifest.find(arg))
         {
@@ -59,7 +60,7 @@ void toolkit::arg_parse(arg_context &context, const arg_manifest &manifest, cons
                 continue;
             }
 
-            auto &val = args[++i];
+            auto val = args[++i];
 
             auto &dst = context.values[entry->id];
 
@@ -76,7 +77,7 @@ void toolkit::arg_parse(arg_context &context, const arg_manifest &manifest, cons
             continue;
         }
 
-        if (const auto pos = arg.find('='); pos != std::string::npos)
+        if (const auto pos = arg.find('='); pos != std::string_view::npos)
         {
             auto key = arg.substr(0, pos);
 
@@ -100,14 +101,6 @@ void toolkit::arg_parse(arg_context &context, const arg_manifest &manifest, cons
             }
         }
 
-        undefined.push_back(arg);
+        context.positional.push_back(arg);
     }
-
-    if (undefined.empty())
-        return;
-
-    std::cerr << "undefined arguments:\n";
-    for (const auto arg : undefined)
-        std::cerr << " - " << arg << '\n';
-    std::cerr << std::endl;
 }

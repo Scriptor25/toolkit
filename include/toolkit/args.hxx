@@ -29,6 +29,7 @@ namespace toolkit
         void get_all(std::string_view key, std::vector<std::string_view> &value) const;
 
         std::string_view file;
+        std::vector<std::string_view> positional;
         std::unordered_set<std::string_view> flags;
         std::unordered_map<std::string_view, std::vector<std::string_view>> values;
     };
