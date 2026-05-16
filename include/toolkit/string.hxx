@@ -68,7 +68,7 @@ namespace toolkit
     template<typename S>
     void trim(S &dst, const S &src)
     {
-        std::string::iterator begin, end;
+        typename S::iterator begin, end;
 
         for (auto it = src.begin(); it != src.end(); ++it)
             if (*it > 0x20)
@@ -90,7 +90,7 @@ namespace toolkit
     template<typename S>
     S trim(const S &src)
     {
-        std::string::iterator begin, end;
+        typename S::iterator begin, end;
 
         for (auto it = src.begin(); it != src.end(); ++it)
             if (*it > 0x20)
