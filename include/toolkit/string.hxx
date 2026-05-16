@@ -11,7 +11,7 @@ namespace toolkit
         vec.clear();
 
         size_t b{}, e{};
-        for (; (e = str.find(delim, b)) != S::npos; b = e)
+        for (; (e = str.find(delim, b)) != std::decay_t<S>::npos; b = e)
             if (b != e)
                 vec.push_back(str.substr(b, e - b));
 
@@ -25,7 +25,7 @@ namespace toolkit
         std::vector<std::decay_t<S>> vec;
 
         size_t b{}, e{};
-        for (; (e = str.find(delim, b)) != S::npos; b = e)
+        for (; (e = str.find(delim, b)) != std::decay_t<S>::npos; b = e)
             if (b != e)
                 vec.push_back(str.substr(b, e - b));
 
