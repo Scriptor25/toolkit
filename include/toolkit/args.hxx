@@ -1,39 +1,51 @@
 #pragma once
 
-#include <string>
+#include <toolkit/result.hxx>
+
+#include <optional>
+#include <span>
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
 
 namespace toolkit
 {
+    enum class arg_kind
+    {
+        flag,
+        value,
+        array,
+    };
+
     struct arg_entry
     {
         std::string_view id;
+        arg_kind kind;
         std::unordered_set<std::string_view> patterns;
-        bool is_flag;
-        bool is_array;
     };
 
     struct arg_manifest
     {
-        [[nodiscard]] const arg_entry *find(const std::string_view &pattern) const;
+        arg_manifest(std::vector<arg_entry> entries);
+
+        [[nodiscard]] const arg_entry *find(std::string_view pattern) const;
 
         std::vector<arg_entry> entries;
+        std::unordered_map<std::string_view, const arg_entry *> lookup;
     };
 
     struct arg_context
     {
-        bool is(std::string_view key) const;
-        bool get(std::string_view key, std::string_view &value) const;
-        void get_all(std::string_view key, std::vector<std::string_view> &value) const;
+        [[nodiscard]] bool is(std::string_view key) const;
+        [[nodiscard]] std::optional<std::string_view> get(std::string_view key) const;
+        [[nodiscard]] std::span<const std::string_view> get_all(std::string_view key) const;
 
-        bool empty() const;
-        size_t size() const;
-        const std::string_view &operator[](size_t index) const;
+        [[nodiscard]] bool empty() const;
+        [[nodiscard]] size_t size() const;
+        [[nodiscard]] const std::string_view &operator[](size_t index) const;
 
-        std::vector<std::string_view>::const_iterator begin() const;
-        std::vector<std::string_view>::const_iterator end() const;
+        [[nodiscard]] std::vector<std::string_view>::const_iterator begin() const;
+        [[nodiscard]] std::vector<std::string_view>::const_iterator end() const;
 
         std::string_view file;
         std::vector<std::string_view> positional;
@@ -41,5 +53,5 @@ namespace toolkit
         std::unordered_map<std::string_view, std::vector<std::string_view>> values;
     };
 
-    void arg_parse(arg_context &context, const arg_manifest &manifest, int argc, const char *const*argv);
+    [[nodiscard]] result<arg_context> arg_parse(const arg_manifest &manifest, int argc, const char *const*argv);
 }
