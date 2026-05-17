@@ -5,13 +5,13 @@
 
 namespace toolkit
 {
-    template<typename S, typename D>
-    void split(std::vector<std::decay_t<S>> &vec, S &&str, D delim)
+    template<typename S, std::convertible_to<std::string_view> D>
+    void split(std::vector<std::decay_t<S>> &vec, S &&str, const D &delim)
     {
         vec.clear();
 
         size_t b{}, e{};
-        for (; (e = str.find(delim, b)) != std::decay_t<S>::npos; b = e)
+        for (; (e = str.find(delim, b)) != std::decay_t<S>::npos; b = e + delim.size())
             if (b != e)
                 vec.push_back(str.substr(b, e - b));
 
@@ -20,18 +20,24 @@ namespace toolkit
     }
 
     template<typename S, typename D>
-    std::vector<std::decay_t<S>> split(S &&str, D delim)
+    void split(std::vector<std::decay_t<S>> &vec, S &&str, D delim)
     {
-        std::vector<std::decay_t<S>> vec;
+        vec.clear();
 
         size_t b{}, e{};
-        for (; (e = str.find(delim, b)) != std::decay_t<S>::npos; b = e)
+        for (; (e = str.find(delim, b)) != std::decay_t<S>::npos; b = e + 1)
             if (b != e)
                 vec.push_back(str.substr(b, e - b));
 
         if (b != e)
             vec.push_back(str.substr(b, e - b));
+    }
 
+    template<typename S, typename D>
+    std::vector<std::decay_t<S>> split(S &&str, D &&delim)
+    {
+        std::vector<std::decay_t<S>> vec;
+        split(vec, std::forward<S>(str), std::forward<D>(delim));
         return vec;
     }
 
