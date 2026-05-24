@@ -33,8 +33,17 @@ namespace toolkit
 
         ~deferred()
         {
-            std::apply(f, a);
+            if (active)
+                std::apply(f, a);
         }
+
+        void deactivate()
+        {
+            active = false;
+        }
+
+    private:
+        bool active = true;
 
         F f;
         std::tuple<A...> a;
