@@ -46,7 +46,11 @@ static std::ostream &print_fn(std::ostream &stream, const unsigned indent, const
 
         void operator()(const json::FloatingPoint value) const
         {
+            const auto flags = stream.flags();
+
             stream << std::scientific << value;
+
+            stream.flags(flags);
         }
 
         void operator()(const json::String &value) const
@@ -85,7 +89,16 @@ static std::ostream &print_fn(std::ostream &stream, const unsigned indent, const
                     }
                     else
                     {
-                        stream << "\\u" << std::setw(4) << std::setfill('0') << std::hex << static_cast<int>(c);
+                        const auto flags = stream.flags();
+
+                        stream
+                                << "\\u"
+                                << std::setw(4)
+                                << std::setfill('0')
+                                << std::hex
+                                << static_cast<int>(c);
+
+                        stream.flags(flags);
                     }
                     break;
                 }
@@ -260,6 +273,7 @@ std::ostream &data::NodeTraits<
 >::print(std::ostream &stream, const json::Node &node)
 {
     const auto indent = stream.width();
+
     stream.width(0);
 
     return print_fn(stream, indent, node.Value);
