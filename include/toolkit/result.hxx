@@ -77,7 +77,7 @@ namespace toolkit
         result(R &&r)
         {
             if (auto *error = std::get_if<typename result_traits<R>::error_type>(&r.container))
-                container = error_type(*error);
+                container = error_type(std::move(*error));
             else if (auto *value = std::get_if<typename result_traits<R>::value_type>(&r.container))
                 container = value_type();
             else
@@ -112,7 +112,7 @@ namespace toolkit
         result &operator=(R &&r)
         {
             if (auto *error = std::get_if<typename result_traits<R>::error_type>(&r.container))
-                container = error_type(*error);
+                container = error_type(std::move(*error));
             else if (auto *value = std::get_if<typename result_traits<R>::value_type>(&r.container))
                 container = value_type();
             else
@@ -265,11 +265,11 @@ namespace toolkit
         result(R &&r)
         {
             if (auto *error = std::get_if<typename result_traits<R>::error_type>(&r.container))
-                container = error_type(*error);
+                container = error_type(std::move(*error));
             else if constexpr (std::convertible_to<typename result_traits<R>::value_type, value_type>)
             {
                 if (auto *value = std::get_if<typename result_traits<R>::value_type>(&r.container))
-                    container = value_type(*value);
+                    container = value_type(std::move(*value));
                 else
                     throw std::runtime_error("result is not convertible");
             }
@@ -317,11 +317,11 @@ namespace toolkit
         result &operator=(R &&r)
         {
             if (auto *error = std::get_if<typename result_traits<R>::error_type>(&r.container))
-                container = error_type(*error);
+                container = error_type(std::move(*error));
             else if constexpr (std::convertible_to<typename result_traits<R>::value_type, value_type>)
             {
                 if (auto *value = std::get_if<typename result_traits<R>::value_type>(&r.container))
-                    container = value_type(*value);
+                    container = value_type(std::move(*value));
                 else
                     throw std::runtime_error("result is not convertible");
             }
