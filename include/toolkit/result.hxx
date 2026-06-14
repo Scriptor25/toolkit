@@ -13,24 +13,29 @@ namespace toolkit
     template<typename = void, typename = std::string>
     class result;
 
-    template<typename>
-    struct is_result : std::false_type
-    {
-    };
-
-    template<typename T, typename E>
-    struct is_result<result<T, E>> : std::true_type
-    {
-    };
-
-    template<typename T>
-    concept result_type = is_result<T>::value;
-
     template<typename E>
     struct result_error
     {
         E message;
     };
+
+    template<typename>
+    struct result_traits
+    {
+        static constexpr auto is_result = false;
+    };
+
+    template<typename V, typename E>
+    struct result_traits<result<V, E>>
+    {
+        static constexpr auto is_result = true;
+
+        using value_type = V;
+        using error_type = result_error<E>;
+    };
+
+    template<typename T>
+    concept result_type = result_traits<T>::is_result;
 
     template<typename E>
     class result<void, E>
@@ -70,8 +75,13 @@ namespace toolkit
 
         template<result_type R>
         result(R &&r)
-            : container(std::get<error_type>(std::forward<R>(r).container))
         {
+            if (auto *error = std::get_if<typename result_traits<R>::error_type>(&r.container))
+                container = error_type(*error);
+            else if (auto *value = std::get_if<typename result_traits<R>::value_type>(&r.container))
+                container = value_type();
+            else
+                throw std::runtime_error("result is not convertible");
         }
 
         result &operator=(const error_type &error)
@@ -101,7 +111,12 @@ namespace toolkit
         template<result_type R>
         result &operator=(R &&r)
         {
-            container = std::get<error_type>(std::forward<R>(r).container);
+            if (auto *error = std::get_if<typename result_traits<R>::error_type>(&r.container))
+                container = error_type(*error);
+            else if (auto *value = std::get_if<typename result_traits<R>::value_type>(&r.container))
+                container = value_type();
+            else
+                throw std::runtime_error("result is not convertible");
             return *this;
         }
 
@@ -248,8 +263,18 @@ namespace toolkit
 
         template<result_type R>
         result(R &&r)
-            : container(std::get<error_type>(std::forward<R>(r).container))
         {
+            if (auto *error = std::get_if<typename result_traits<R>::error_type>(&r.container))
+                container = error_type(*error);
+            else if constexpr (!std::is_void_v<typename result_traits<R>::value_type>)
+            {
+                if (auto *value = std::get_if<typename result_traits<R>::value_type>(&r.container))
+                    container = value_type(*value);
+                else
+                    throw std::runtime_error("result is not convertible");
+            }
+            else
+                throw std::runtime_error("result is not convertible");
         }
 
         result &operator=(const value_type &value)
@@ -291,7 +316,17 @@ namespace toolkit
         template<result_type R>
         result &operator=(R &&r)
         {
-            container = std::get<error_type>(std::forward<R>(r).container);
+            if (auto *error = std::get_if<typename result_traits<R>::error_type>(&r.container))
+                container = error_type(*error);
+            else if constexpr (!std::is_void_v<typename result_traits<R>::value_type>)
+            {
+                if (auto *value = std::get_if<typename result_traits<R>::value_type>(&r.container))
+                    container = value_type(*value);
+                else
+                    throw std::runtime_error("result is not convertible");
+            }
+            else
+                throw std::runtime_error("result is not convertible");
             return *this;
         }
 
