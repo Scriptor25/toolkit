@@ -266,7 +266,7 @@ namespace toolkit
         {
             if (auto *error = std::get_if<typename result_traits<R>::error_type>(&r.container))
                 container = error_type(*error);
-            else if constexpr (!std::is_void_v<typename result_traits<R>::value_type>)
+            else if constexpr (std::convertible_to<typename result_traits<R>::value_type, value_type>)
             {
                 if (auto *value = std::get_if<typename result_traits<R>::value_type>(&r.container))
                     container = value_type(*value);
@@ -318,7 +318,7 @@ namespace toolkit
         {
             if (auto *error = std::get_if<typename result_traits<R>::error_type>(&r.container))
                 container = error_type(*error);
-            else if constexpr (!std::is_void_v<typename result_traits<R>::value_type>)
+            else if constexpr (std::convertible_to<typename result_traits<R>::value_type, value_type>)
             {
                 if (auto *value = std::get_if<typename result_traits<R>::value_type>(&r.container))
                     container = value_type(*value);
