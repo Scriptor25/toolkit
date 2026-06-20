@@ -110,6 +110,8 @@ toolkit::result<toolkit::arg_context> toolkit::arg_parse(
     if (argc > 0)
         context.file = argv[0];
 
+    context.limit = ~size_t();
+
     context.positional.clear();
     context.flags.clear();
     context.values.clear();
