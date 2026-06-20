@@ -34,6 +34,15 @@ namespace toolkit
         using error_type = result_error<E>;
     };
 
+    template<typename E>
+    struct result_traits<result<void, E>>
+    {
+        static constexpr auto is_result = true;
+
+        using value_type = std::monostate;
+        using error_type = result_error<E>;
+    };
+
     template<typename T>
     concept result_type = result_traits<T>::is_result;
 
