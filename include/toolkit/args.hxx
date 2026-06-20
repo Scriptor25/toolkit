@@ -48,6 +48,7 @@ namespace toolkit
         [[nodiscard]] std::vector<std::string_view>::const_iterator end() const;
 
         std::string_view file;
+        size_t limit;
         std::vector<std::string_view> positional;
         std::unordered_set<std::string_view> flags;
         std::unordered_map<std::string_view, std::vector<std::string_view>> values;

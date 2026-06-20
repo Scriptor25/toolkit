@@ -128,6 +128,7 @@ toolkit::result<toolkit::arg_context> toolkit::arg_parse(
 
         if (arg == "--")
         {
+            context.limit = context.positional.size();
             positional = true;
             continue;
         }
