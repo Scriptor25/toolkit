@@ -21,6 +21,24 @@ toolkit::arg_manifest::arg_manifest(std::vector<arg_entry> arg_entries)
         }
 }
 
+void toolkit::arg_manifest::push_back(arg_entry &&entry)
+{
+    entries.push_back(std::move(entry));
+
+    for (auto &e = entries.back(); auto pattern : e.patterns)
+    {
+        if (auto it = lookup.find(pattern); it != lookup.end())
+            throw std::runtime_error(
+                std::format(
+                    "warning: attempt to override pattern '{}': first defined by '{}', then by '{}'.",
+                    pattern,
+                    it->second->id,
+                    e.id));
+
+        lookup[pattern] = &e;
+    }
+}
+
 const toolkit::arg_entry *toolkit::arg_manifest::find(const std::string_view pattern) const
 {
     if (const auto it = lookup.find(pattern); it != lookup.end())

@@ -26,7 +26,10 @@ namespace toolkit
 
     struct arg_manifest
     {
+        arg_manifest() = default;
         arg_manifest(std::vector<arg_entry> arg_entries);
+
+        void push_back(arg_entry &&entry);
 
         [[nodiscard]] const arg_entry *find(std::string_view pattern) const;
 
