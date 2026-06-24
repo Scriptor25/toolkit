@@ -123,10 +123,25 @@ toolkit::result<toolkit::arg_context> toolkit::arg_parse(
     const int argc,
     const char *const *argv)
 {
+    return arg_parse(manifest, std::span(argv, argv + argc));
+}
+
+toolkit::result<toolkit::arg_context> toolkit::arg_parse(
+    const arg_manifest &manifest,
+    const std::span<const char * const> args)
+{
+    std::vector<std::string_view> values(args.size());
+    for (size_t i = 0; i < args.size(); ++i)
+        values[i] = args[i];
+    return arg_parse(manifest, values);
+}
+
+toolkit::result<toolkit::arg_context> toolkit::arg_parse(const arg_manifest &manifest, std::span<std::string_view> args)
+{
     arg_context context;
 
-    if (argc > 0)
-        context.file = argv[0];
+    if (!args.empty())
+        context.file = args[0];
 
     context.limit = ~size_t();
 
@@ -136,9 +151,9 @@ toolkit::result<toolkit::arg_context> toolkit::arg_parse(
 
     auto positional = false;
 
-    for (size_t i = 1; i < argc; ++i)
+    for (size_t i = 1; i < args.size(); ++i)
     {
-        std::string_view arg = argv[i];
+        auto arg = args[i];
 
         if (positional)
         {
@@ -161,10 +176,10 @@ toolkit::result<toolkit::arg_context> toolkit::arg_parse(
                 continue;
             }
 
-            if (++i >= argc)
+            if (++i >= args.size())
                 return make_error("missing value for argument '{}': reached end of arguments.", arg);
 
-            std::string_view val = argv[i];
+            auto val = args[i];
 
             if (auto res = parse_argument(context, *entry, arg, val); !res)
                 return res;

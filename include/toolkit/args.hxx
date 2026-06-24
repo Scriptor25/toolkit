@@ -4,6 +4,7 @@
 
 #include <optional>
 #include <span>
+#include <span>
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
@@ -58,4 +59,6 @@ namespace toolkit
     };
 
     [[nodiscard]] result<arg_context> arg_parse(const arg_manifest &manifest, int argc, const char *const*argv);
+    [[nodiscard]] result<arg_context> arg_parse(const arg_manifest &manifest, std::span<const char * const> args);
+    [[nodiscard]] result<arg_context> arg_parse(const arg_manifest &manifest, std::span<std::string_view> args);
 }
