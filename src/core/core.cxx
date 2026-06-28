@@ -183,6 +183,8 @@ toolkit::result<toolkit::arg_context> toolkit::arg_parse(const arg_manifest &man
 
             if (auto res = parse_argument(context, *entry, arg, val); !res)
                 return res;
+
+            continue;
         }
 
         if (const auto pos = arg.find('='); pos != std::string_view::npos)
@@ -198,6 +200,8 @@ toolkit::result<toolkit::arg_context> toolkit::arg_parse(const arg_manifest &man
 
                 if (auto res = parse_argument(context, *entry, key, val); !res)
                     return res;
+
+                continue;
             }
         }
 

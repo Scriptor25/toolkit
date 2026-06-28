@@ -4,7 +4,6 @@
 
 #include <optional>
 #include <span>
-#include <span>
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
@@ -47,6 +46,8 @@ namespace toolkit
         [[nodiscard]] bool empty() const;
         [[nodiscard]] size_t size() const;
         [[nodiscard]] const std::string_view &operator[](size_t index) const;
+
+        // TODO: add hash helper
 
         [[nodiscard]] std::vector<std::string_view>::const_iterator begin() const;
         [[nodiscard]] std::vector<std::string_view>::const_iterator end() const;
