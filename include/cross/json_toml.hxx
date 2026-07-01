@@ -1,6 +1,6 @@
 #pragma once
 
-#include <../data/serializer.hxx>
+#include <data/serializer.hxx>
 #include <json/json.hxx>
 #include <toml/toml.hxx>
 

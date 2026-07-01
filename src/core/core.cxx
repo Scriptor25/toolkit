@@ -237,3 +237,27 @@ toolkit::result<toolkit::arg_context> toolkit::arg_parse(const arg_manifest &man
 
     return context;
 }
+
+std::istream &toolkit::get_line(std::istream &stream, std::string &string, const std::string_view delimiter)
+{
+    string.clear();
+
+    while (stream.good() && !stream.eof() && string.find(delimiter) == std::string::npos)
+    {
+        const auto c = stream.get();
+        if (c < 0)
+        {
+            break;
+        }
+
+        string += static_cast<char>(c);
+    }
+
+    if (string.find(delimiter) == std::string::npos)
+    {
+        return stream;
+    }
+
+    string = string.substr(0, string.size() - delimiter.size());
+    return stream;
+}
