@@ -10,7 +10,7 @@ namespace http
     {
         virtual ~Transport() = default;
 
-        virtual int open(const URL &location) = 0;
+        virtual toolkit::result<int> open(const URL &location) = 0;
         virtual void close(int fd) = 0;
 
         virtual int send(int fd, const void *buffer, size_t count, int flags) = 0;

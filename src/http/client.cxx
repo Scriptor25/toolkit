@@ -26,9 +26,9 @@ static void set_header_if_missing(http::HttpHeaders &headers, const std::string 
 
 toolkit::result<> http::Client::Fetch(HttpRequest request, HttpResponse &response)
 {
-    auto fd = m_Transport.open(request.Location);
-    if (fd < 0)
-        return toolkit::make_error("failed to open socket.");
+    int fd;
+    if (auto res = m_Transport.open(request.Location) >> fd; !res)
+        return res;
 
     auto guard0 = toolkit::defer(
         [this](auto x)
