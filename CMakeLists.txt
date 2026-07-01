@@ -28,6 +28,7 @@ target_include_directories(toolkit_http PUBLIC
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
         $<INSTALL_INTERFACE:${CMAKE_INSTALL_PREFIX}/include>
 )
+target_link_libraries(toolkit_http PUBLIC toolkit_core)
 
 ### JSON ###
 
