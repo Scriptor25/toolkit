@@ -19,6 +19,16 @@ target_include_directories(toolkit_core PUBLIC
         $<INSTALL_INTERFACE:${CMAKE_INSTALL_PREFIX}/include>
 )
 
+### HTTP ###
+
+file(GLOB_RECURSE HTTP_SOURCES src/http/*.cxx)
+add_library(toolkit_http ${HTTP_SOURCES})
+add_library(toolkit::http ALIAS toolkit_http)
+target_include_directories(toolkit_http PUBLIC
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+        $<INSTALL_INTERFACE:${CMAKE_INSTALL_PREFIX}/include>
+)
+
 ### JSON ###
 
 file(GLOB_RECURSE JSON_SOURCES src/json/*.cxx)
