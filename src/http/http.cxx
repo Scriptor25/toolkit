@@ -51,3 +51,38 @@ void http::ParseHeaders(std::istream &stream, HttpHeaders &headers)
         headers.emplace(toolkit::lowercase(std::move(key)), std::move(val));
     }
 }
+
+std::ostream &operator<<(std::ostream &stream, const http::HttpMethod method)
+{
+    static const std::map<http::HttpMethod, const char *> map
+    {
+        { http::HttpMethod::Get, "GET" },
+        { http::HttpMethod::Head, "HEAD" },
+        { http::HttpMethod::Post, "POST" },
+        { http::HttpMethod::Put, "PUT" },
+        { http::HttpMethod::Delete, "DELETE" },
+        { http::HttpMethod::Connect, "CONNECT" },
+        { http::HttpMethod::Options, "OPTIONS" },
+        { http::HttpMethod::Trace, "TRACE" },
+    };
+
+    if (const auto it = map.find(method); it != map.end())
+    {
+        return stream << it->second;
+    }
+
+    return stream << "undefined";
+}
+
+std::ostream &operator<<(std::ostream &stream, http::HttpStatusCode status_code)
+{
+    return stream << static_cast<int>(status_code);
+}
+
+std::istream &operator>>(std::istream &stream, http::HttpStatusCode &status_code)
+{
+    int status_code_int;
+    stream >> status_code_int;
+    status_code = static_cast<http::HttpStatusCode>(status_code_int);
+    return stream;
+}
