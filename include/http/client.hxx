@@ -8,17 +8,19 @@ namespace http
 {
     struct Transport
     {
-        int open(const URL &location);
-        void close(int fd);
+        virtual ~Transport() = default;
 
-        int send(int fd, const void *buffer, size_t count, int flags);
-        int recv(int fd, void *buffer, size_t count, int flags);
+        virtual int open(const URL &location) = 0;
+        virtual void close(int fd) = 0;
+
+        virtual int send(int fd, const void *buffer, size_t count, int flags) = 0;
+        virtual int recv(int fd, void *buffer, size_t count, int flags) = 0;
     };
 
     class Client
     {
     public:
-        explicit Client(Transport transport);
+        explicit Client(Transport &transport);
 
         [[nodiscard]] toolkit::result<> Fetch(HttpRequest request, HttpResponse &response);
         [[nodiscard]] toolkit::result<> FetchWithRedirects(HttpRequest request, HttpResponse &response);
@@ -29,6 +31,6 @@ namespace http
 
         [[nodiscard]] toolkit::result<> ReadUntil(int fd, std::string &dst, const char *delimiter);
 
-        Transport m_Transport;
+        Transport &m_Transport;
     };
 }

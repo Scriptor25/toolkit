@@ -11,8 +11,8 @@
 #include <ostream>
 #include <sstream>
 
-http::Client::Client(Transport transport)
-    : m_Transport(std::move(transport))
+http::Client::Client(Transport &transport)
+    : m_Transport(transport)
 {
 }
 
