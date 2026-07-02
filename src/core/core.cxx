@@ -136,7 +136,9 @@ toolkit::result<toolkit::arg_context> toolkit::arg_parse(
     return arg_parse(manifest, values);
 }
 
-toolkit::result<toolkit::arg_context> toolkit::arg_parse(const arg_manifest &manifest, std::span<std::string_view> args)
+toolkit::result<toolkit::arg_context> toolkit::arg_parse(
+    const arg_manifest &manifest,
+    std::span<const std::string_view> args)
 {
     arg_context context;
 

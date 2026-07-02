@@ -61,5 +61,5 @@ namespace toolkit
 
     [[nodiscard]] result<arg_context> arg_parse(const arg_manifest &manifest, int argc, const char *const*argv);
     [[nodiscard]] result<arg_context> arg_parse(const arg_manifest &manifest, std::span<const char * const> args);
-    [[nodiscard]] result<arg_context> arg_parse(const arg_manifest &manifest, std::span<std::string_view> args);
+    [[nodiscard]] result<arg_context> arg_parse(const arg_manifest &manifest, std::span<const std::string_view> args);
 }
