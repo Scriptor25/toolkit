@@ -8,31 +8,31 @@
 
 namespace http
 {
-    struct Transport
+    struct transport
     {
-        virtual ~Transport() = default;
+        virtual ~transport() = default;
 
-        virtual toolkit::result<int> open(const URL &location) = 0;
+        virtual toolkit::result<int> open(const url &location) = 0;
         virtual void close(int fd) = 0;
 
         virtual int send(int fd, const void *buffer, size_t count, int flags) = 0;
         virtual int recv(int fd, void *buffer, size_t count, int flags) = 0;
     };
 
-    class Client
+    class client
     {
     public:
-        explicit Client(Transport &transport);
+        explicit client(transport &t);
 
-        [[nodiscard]] toolkit::result<> Fetch(HttpRequest request, HttpResponse &response);
-        [[nodiscard]] toolkit::result<> FetchWithRedirects(HttpRequest request, HttpResponse &response);
+        [[nodiscard]] toolkit::result<> fetch(request_t request, response_t &response);
+        [[nodiscard]] toolkit::result<> fetch_with_redirects(request_t request, response_t &response);
 
     private:
-        int Read(int fd, std::span<char> buffer);
-        int Write(int fd, std::span<const char> buffer);
+        int read(int fd, std::span<char> buffer);
+        int write(int fd, std::span<const char> buffer);
 
-        [[nodiscard]] toolkit::result<> ReadUntil(int fd, std::string &dst, const char *delimiter);
+        [[nodiscard]] toolkit::result<> read_until(int fd, std::string &dst, const char *delimiter);
 
-        Transport &m_Transport;
+        transport &transport_;
     };
 }

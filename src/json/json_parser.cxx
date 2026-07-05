@@ -4,22 +4,22 @@
 
 #include <istream>
 
-json::Parser::Parser(std::istream &stream)
+json::parser::parser(std::istream &stream)
     : m_Stream(stream),
       m_Buffer(stream.get())
 {
 }
 
-toolkit::result<json::Node> json::Parser::Parse()
+toolkit::result<json::node_t> json::parser::parse()
 {
-    toolkit::result<Node> exp;
+    toolkit::result<node_t> exp;
 
-    SkipWhitespace();
+    skip_whitespace();
 
     switch (m_Buffer)
     {
     case 'n':
-        if (Skip("null"))
+        if (skip("null"))
         {
             exp = nullptr;
         }
@@ -29,7 +29,7 @@ toolkit::result<json::Node> json::Parser::Parse()
         }
         break;
     case 'f':
-        if (Skip("false"))
+        if (skip("false"))
         {
             exp = false;
         }
@@ -39,7 +39,7 @@ toolkit::result<json::Node> json::Parser::Parse()
         }
         break;
     case 't':
-        if (Skip("true"))
+        if (skip("true"))
         {
             exp = true;
         }
@@ -59,45 +59,45 @@ toolkit::result<json::Node> json::Parser::Parse()
     case '7':
     case '8':
     case '9':
-        exp = ParseNumber();
+        exp = parse_number();
         break;
     case '"':
-        exp = ParseString();
+        exp = parse_string();
         break;
     case '[':
-        exp = ParseArray();
+        exp = parse_array();
         break;
     case '{':
-        exp = ParseObject();
+        exp = parse_object();
         break;
     default:
         break;
     }
 
-    SkipWhitespace();
+    skip_whitespace();
 
     return exp;
 }
 
-toolkit::result<json::Node> json::Parser::ParseNumber()
+toolkit::result<json::node_t> json::parser::parse_number()
 {
     std::string buffer;
     auto is_float = false;
 
-    if (At('-'))
+    if (at('-'))
     {
-        buffer += Pop();
+        buffer += pop();
     }
 
-    if (At('0'))
+    if (at('0'))
     {
-        buffer += Pop();
+        buffer += pop();
     }
     else if ('1' <= m_Buffer && m_Buffer <= '9')
     {
         do
         {
-            buffer += Pop();
+            buffer += pop();
         }
         while ('0' <= m_Buffer && m_Buffer <= '9');
     }
@@ -106,9 +106,9 @@ toolkit::result<json::Node> json::Parser::ParseNumber()
         return toolkit::make_error("expected base 10 digit");
     }
 
-    if (At('.'))
+    if (at('.'))
     {
-        buffer += Pop();
+        buffer += pop();
         is_float = true;
 
         if (!('0' <= m_Buffer && m_Buffer <= '9'))
@@ -118,19 +118,19 @@ toolkit::result<json::Node> json::Parser::ParseNumber()
 
         do
         {
-            buffer += Pop();
+            buffer += pop();
         }
         while ('0' <= m_Buffer && m_Buffer <= '9');
     }
 
-    if (At('e') || At('E'))
+    if (at('e') || at('E'))
     {
-        buffer += Pop();
+        buffer += pop();
         is_float = true;
 
-        if (At('-') || At('+'))
+        if (at('-') || at('+'))
         {
-            buffer += Pop();
+            buffer += pop();
         }
 
         if (!('0' <= m_Buffer && m_Buffer <= '9'))
@@ -140,7 +140,7 @@ toolkit::result<json::Node> json::Parser::ParseNumber()
 
         do
         {
-            buffer += Pop();
+            buffer += pop();
         }
         while ('0' <= m_Buffer && m_Buffer <= '9');
     }
@@ -153,24 +153,24 @@ toolkit::result<json::Node> json::Parser::ParseNumber()
     return { std::stoll(buffer) };
 }
 
-toolkit::result<json::Node> json::Parser::ParseString()
+toolkit::result<json::node_t> json::parser::parse_string()
 {
     std::u32string value;
 
-    if (!Skip('"'))
+    if (!skip('"'))
     {
         return toolkit::make_error("expected quote");
     }
 
-    while (!Skip('"'))
+    while (!skip('"'))
     {
-        if (!Skip('\\'))
+        if (!skip('\\'))
         {
-            value += Pop();
+            value += pop();
             continue;
         }
 
-        switch (Pop())
+        switch (pop())
         {
         case '"':
             value += '"';
@@ -198,13 +198,13 @@ toolkit::result<json::Node> json::Parser::ParseString()
             break;
         case 'u':
         {
-            const auto hi = PopByte();
+            const auto hi = pop_byte();
             if (!hi)
             {
                 return toolkit::make_error("{}", hi.error());
             }
 
-            const auto lo = PopByte();
+            const auto lo = pop_byte();
             if (!lo)
             {
                 return toolkit::make_error("{}", lo.error());
@@ -221,22 +221,22 @@ toolkit::result<json::Node> json::Parser::ParseString()
     return { toolkit::utf8::encode(std::move(value)) };
 }
 
-toolkit::result<json::Node> json::Parser::ParseArray()
+toolkit::result<json::node_t> json::parser::parse_array()
 {
-    Array nodes;
+    array_t nodes;
 
-    if (!Skip('['))
+    if (!skip('['))
     {
         return toolkit::make_error("expected opening bracket");
     }
 
-    SkipWhitespace();
+    skip_whitespace();
 
-    if (!Skip(']'))
+    if (!skip(']'))
     {
         do
         {
-            auto element = Parse();
+            auto element = parse();
             if (!element)
             {
                 return element;
@@ -244,9 +244,9 @@ toolkit::result<json::Node> json::Parser::ParseArray()
 
             nodes.push_back(std::move(*element));
         }
-        while (Skip(','));
+        while (skip(','));
 
-        if (!Skip(']'))
+        if (!skip(']'))
         {
             return toolkit::make_error("expected closing bracket");
         }
@@ -255,47 +255,47 @@ toolkit::result<json::Node> json::Parser::ParseArray()
     return { std::move(nodes) };
 }
 
-toolkit::result<json::Node> json::Parser::ParseObject()
+toolkit::result<json::node_t> json::parser::parse_object()
 {
-    Object nodes;
+    object_t nodes;
 
-    if (!Skip('{'))
+    if (!skip('{'))
     {
         return toolkit::make_error("expected opening brace");
     }
 
-    SkipWhitespace();
+    skip_whitespace();
 
-    if (!Skip('}'))
+    if (!skip('}'))
     {
         do
         {
-            SkipWhitespace();
+            skip_whitespace();
 
-            auto key = ParseString();
+            auto key = parse_string();
             if (!key)
             {
                 return key;
             }
 
-            SkipWhitespace();
+            skip_whitespace();
 
-            if (!Skip(':'))
+            if (!skip(':'))
             {
                 return toolkit::make_error("expected colon");
             }
 
-            auto value = Parse();
+            auto value = parse();
             if (!value)
             {
                 return value;
             }
 
-            nodes[key->Get<String>()] = std::move(*value);
+            nodes[key->get<string_t>()] = std::move(*value);
         }
-        while (Skip(','));
+        while (skip(','));
 
-        if (!Skip('}'))
+        if (!skip('}'))
         {
             return toolkit::make_error("expected closing brace");
         }
@@ -304,21 +304,21 @@ toolkit::result<json::Node> json::Parser::ParseObject()
     return { std::move(nodes) };
 }
 
-void json::Parser::Get()
+void json::parser::get()
 {
     m_Buffer = m_Stream.get();
 }
 
-char json::Parser::Pop()
+char json::parser::pop()
 {
     const auto buffer = m_Buffer;
     m_Buffer = m_Stream.get();
     return static_cast<char>(buffer);
 }
 
-toolkit::result<uint8_t> json::Parser::PopHalfByte()
+toolkit::result<uint8_t> json::parser::pop_nibble()
 {
-    const auto c = Pop();
+    const auto c = pop();
     if ('0' <= c && c <= '9')
     {
         return c - '0';
@@ -334,15 +334,15 @@ toolkit::result<uint8_t> json::Parser::PopHalfByte()
     return toolkit::make_error("expected base 16 digit");
 }
 
-toolkit::result<uint8_t> json::Parser::PopByte()
+toolkit::result<uint8_t> json::parser::pop_byte()
 {
-    auto hi = PopHalfByte();
+    auto hi = pop_nibble();
     if (!hi)
     {
         return hi;
     }
 
-    auto lo = PopHalfByte();
+    auto lo = pop_nibble();
     if (!lo)
     {
         return lo;
@@ -351,26 +351,26 @@ toolkit::result<uint8_t> json::Parser::PopByte()
     return (*hi & 0xF) << 4 | *lo & 0xF;
 }
 
-bool json::Parser::At(const char c) const
+bool json::parser::at(const char c) const
 {
     return m_Buffer == c;
 }
 
-bool json::Parser::Skip(const char c)
+bool json::parser::skip(const char c)
 {
     const auto skip = m_Buffer == c;
     if (skip)
     {
-        Get();
+        get();
     }
     return skip;
 }
 
-bool json::Parser::Skip(const std::string_view s)
+bool json::parser::skip(const std::string_view s)
 {
     for (const auto c : s)
     {
-        if (!Skip(c))
+        if (!skip(c))
         {
             return false;
         }
@@ -383,7 +383,7 @@ static bool is_whitespace(const int c)
     return c == ' ' || c == '\n' || c == '\r' || c == '\t';
 }
 
-bool json::Parser::SkipWhitespace()
+bool json::parser::skip_whitespace()
 {
     if (!is_whitespace(m_Buffer))
     {
@@ -392,7 +392,7 @@ bool json::Parser::SkipWhitespace()
 
     do
     {
-        Get();
+        get();
     }
     while (is_whitespace(m_Buffer));
 

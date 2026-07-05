@@ -8,66 +8,66 @@
 
 namespace toml
 {
-    using Undefined = data::Undefined;
-    using Boolean = bool;
-    using Integer = data::Integer;
-    using FloatingPoint = data::FloatingPoint;
-    using String = std::string;
+    using undefined_t = data::undefined_t;
+    using boolean_t = bool;
+    using integer_t = data::integer_t;
+    using floating_point_t = data::floating_point_t;
+    using string_t = std::string;
 
-    struct LocalDate
+    struct local_date_t
     {
-        uint32_t Year{};
-        uint32_t Month{};
-        uint32_t Day{};
+        uint32_t year{};
+        uint32_t month{};
+        uint32_t day{};
     };
 
-    struct LocalTime
+    struct local_time_t
     {
-        uint32_t Hour{};
-        uint32_t Minute{};
-        uint32_t Second{};
+        uint32_t hour{};
+        uint32_t minute{};
+        uint32_t second{};
 
-        long double Fraction{};
+        long double fraction{};
     };
 
-    struct DateTime
+    struct date_time_t
     {
-        struct TimeOffset
+        struct time_offset_t
         {
-            uint32_t Hours{};
-            uint32_t Minutes{};
+            uint32_t hours{};
+            uint32_t minutes{};
         };
 
-        LocalDate Date;
-        LocalTime Time;
+        local_date_t date;
+        local_time_t time;
 
-        std::optional<TimeOffset> Offset;
+        std::optional<time_offset_t> offset;
     };
 
-    using Node = data::Node<
-        Boolean,
-        Integer,
-        FloatingPoint,
-        String,
-        LocalDate,
-        LocalTime,
-        DateTime
+    using node_t = data::node_t<
+        boolean_t,
+        integer_t,
+        floating_point_t,
+        string_t,
+        local_date_t,
+        local_time_t,
+        date_time_t
     >;
 
-    using Array = Node::Vec;
-    using Table = Node::Map;
+    using array_t = node_t::vec_type;
+    using table_t = node_t::map_type;
 }
 
 template<>
-struct data::NodeTraits<
-            toml::Boolean,
-            toml::Integer,
-            toml::FloatingPoint,
-            toml::String,
-            toml::LocalDate,
-            toml::LocalTime,
-            toml::DateTime
+struct data::node_traits_t<
+            toml::boolean_t,
+            toml::integer_t,
+            toml::floating_point_t,
+            toml::string_t,
+            toml::local_date_t,
+            toml::local_time_t,
+            toml::date_time_t
         >
 {
-    static std::istream &parse(std::istream &stream, toml::Node &node);
+    static std::istream &parse(std::istream &stream, toml::node_t &node);
 };

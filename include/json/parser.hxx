@@ -1,37 +1,37 @@
 #pragma once
 
-#include <toolkit/result.hxx>
-
 #include <json/json.hxx>
+
+#include <toolkit/result.hxx>
 
 #include <cstdint>
 
 namespace json
 {
-    class Parser final
+    class parser
     {
     public:
-        explicit Parser(std::istream &stream);
+        explicit parser(std::istream &stream);
 
-        toolkit::result<Node> Parse();
+        [[nodiscard]] toolkit::result<node_t> parse();
 
     protected:
-        toolkit::result<Node> ParseNumber();
-        toolkit::result<Node> ParseString();
-        toolkit::result<Node> ParseArray();
-        toolkit::result<Node> ParseObject();
+        [[nodiscard]] toolkit::result<node_t> parse_number();
+        [[nodiscard]] toolkit::result<node_t> parse_string();
+        [[nodiscard]] toolkit::result<node_t> parse_array();
+        [[nodiscard]] toolkit::result<node_t> parse_object();
 
-        void Get();
-        char Pop();
+        void get();
+        char pop();
 
-        toolkit::result<uint8_t> PopHalfByte();
-        toolkit::result<uint8_t> PopByte();
+        [[nodiscard]] toolkit::result<uint8_t> pop_nibble();
+        [[nodiscard]] toolkit::result<uint8_t> pop_byte();
 
-        [[nodiscard]] bool At(char c) const;
+        [[nodiscard]] bool at(char c) const;
 
-        bool Skip(char c);
-        bool Skip(std::string_view s);
-        bool SkipWhitespace();
+        bool skip(char c);
+        bool skip(std::string_view s);
+        bool skip_whitespace();
 
     private:
         std::istream &m_Stream;

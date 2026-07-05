@@ -7,16 +7,16 @@
 
 namespace http
 {
-    struct URL
+    struct url
     {
-        std::string Scheme;
-        std::string Host;
-        uint16_t Port{};
-        std::string Pathname;
-    };
+        static void parse(url &dst, std::string_view src);
+        static url parse(std::string_view src);
 
-    void ParseURL(URL &dst, std::string_view src);
-    URL ParseURL(std::string_view src);
+        std::string scheme;
+        std::string host;
+        uint16_t port{};
+        std::string pathname;
+    };
 }
 
-std::ostream &operator<<(std::ostream &stream, const http::URL &location);
+std::ostream &operator<<(std::ostream &stream, const http::url &location);

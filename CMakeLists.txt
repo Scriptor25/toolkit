@@ -19,6 +19,17 @@ target_include_directories(toolkit_core PUBLIC
         $<INSTALL_INTERFACE:${CMAKE_INSTALL_PREFIX}/include>
 )
 
+### ARGS ###
+
+file(GLOB_RECURSE ARGS_SOURCES src/args/*.cxx)
+add_library(toolkit_args ${ARGS_SOURCES})
+add_library(toolkit::args ALIAS toolkit_args)
+target_include_directories(toolkit_args PUBLIC
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+        $<INSTALL_INTERFACE:${CMAKE_INSTALL_PREFIX}/include>
+)
+target_link_libraries(toolkit_args PUBLIC toolkit_core)
+
 ### HTTP ###
 
 file(GLOB_RECURSE HTTP_SOURCES src/http/*.cxx)
@@ -51,6 +62,11 @@ target_include_directories(toolkit_toml PUBLIC
         $<INSTALL_INTERFACE:${CMAKE_INSTALL_PREFIX}/include>
 )
 target_link_libraries(toolkit_toml PUBLIC toolkit_core)
+
+### TEST ###
+
+add_executable(test src/test.cxx)
+target_link_libraries(test PRIVATE toolkit_core toolkit_args toolkit_http toolkit_json toolkit_toml)
 
 ### INSTALL ###
 

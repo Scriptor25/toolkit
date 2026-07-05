@@ -2,24 +2,20 @@
 
 #include <iostream>
 
-std::istream &data::NodeTraits<
-    toml::Boolean,
-    toml::Integer,
-    toml::FloatingPoint,
-    toml::String,
-    toml::LocalDate,
-    toml::LocalTime,
-    toml::DateTime
->::parse(std::istream &stream, toml::Node &node)
+std::istream &data::node_traits_t<
+    toml::boolean_t,
+    toml::integer_t,
+    toml::floating_point_t,
+    toml::string_t,
+    toml::local_date_t,
+    toml::local_time_t,
+    toml::date_time_t
+>::parse(std::istream &stream, toml::node_t &node)
 {
-    toml::Parser parser(stream);
-    if (auto result = parser.Parse())
-    {
-        node = *std::move(result);
-    }
+    toml::parser parser(stream);
+    if (auto res = parser.parse())
+        node = *std::move(res);
     else
-    {
-        std::cerr << result.error() << std::endl;
-    }
+        std::cerr << res.error() << std::endl;
     return stream;
 }

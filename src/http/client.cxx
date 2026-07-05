@@ -11,12 +11,12 @@
 #include <ostream>
 #include <sstream>
 
-http::Client::Client(Transport &transport)
-    : m_Transport(transport)
+http::client::client(transport &t)
+    : transport_(t)
 {
 }
 
-static void set_header_if_missing(http::HttpHeaders &headers, const std::string &key, const std::string &val)
+static void set_header_if_missing(http::headers_t &headers, const std::string &key, const std::string &val)
 {
     if (headers.contains(key) || headers.contains(toolkit::lowercase(key)))
         return;
@@ -24,48 +24,48 @@ static void set_header_if_missing(http::HttpHeaders &headers, const std::string 
     headers.emplace(key, val);
 }
 
-toolkit::result<> http::Client::Fetch(HttpRequest request, HttpResponse &response)
+toolkit::result<> http::client::fetch(request_t request, response_t &response)
 {
     int fd;
-    if (auto res = m_Transport.open(request.Location) >> fd; !res)
+    if (auto res = transport_.open(request.location) >> fd; !res)
         return res;
 
     auto guard0 = toolkit::defer(
         [this](auto x)
         {
-            m_Transport.close(x);
+            transport_.close(x);
         },
         fd);
 
-    set_header_if_missing(request.Headers, "Host", request.Location.Host);
-    set_header_if_missing(request.Headers, "Connection", "close");
-    set_header_if_missing(request.Headers, "Accept-Encoding", "identity");
-    set_header_if_missing(request.Headers, "User-Agent", "unvm/0.1");
+    set_header_if_missing(request.headers, "Host", request.location.host);
+    set_header_if_missing(request.headers, "Connection", "close");
+    set_header_if_missing(request.headers, "Accept-Encoding", "identity");
+    set_header_if_missing(request.headers, "User-Agent", "unvm/0.1");
 
     std::stringstream packet;
-    packet << request.Method << ' ' << request.Location.Pathname << ' ' << "HTTP/1.1" << EOL;
-    for (auto &[key, val] : request.Headers)
+    packet << request.method << ' ' << request.location.pathname << ' ' << "HTTP/1.1" << EOL;
+    for (auto &[key, val] : request.headers)
         packet << key << ": " << val << EOL;
     packet << EOL;
 
-    if (Write(fd, packet.str()) < 0)
+    if (write(fd, packet.str()) < 0)
         return toolkit::make_error("failed to send header.");
 
     char chunk[4096];
 
-    if (request.Body)
+    if (request.body)
     {
         size_t count = 0;
 
         while (true)
         {
-            request.Body->read(chunk, sizeof(chunk));
-            const size_t len = request.Body->gcount();
+            request.body->read(chunk, sizeof(chunk));
+            const size_t len = request.body->gcount();
 
             if (len <= 0)
                 break;
 
-            if (Write(fd, { chunk, len }) < 0)
+            if (write(fd, { chunk, len }) < 0)
                 return toolkit::make_error("failed to send chunk.");
 
             count += len;
@@ -73,7 +73,7 @@ toolkit::result<> http::Client::Fetch(HttpRequest request, HttpResponse &respons
     }
 
     std::string header_block;
-    if (auto res = ReadUntil(fd, header_block, EOL2); !res)
+    if (auto res = read_until(fd, header_block, EOL2); !res)
         return toolkit::make_error("failed to read header block: {}", res.error());
 
     auto headers_end = header_block.find(EOL2);
@@ -86,28 +86,28 @@ toolkit::result<> http::Client::Fetch(HttpRequest request, HttpResponse &respons
     toolkit::get_line(headers_stream, status_line, EOL);
 
     std::istringstream status_stream(status_line);
-    if (auto res = ParseStatus(status_stream, response.StatusCode, response.StatusMessage); !res)
+    if (auto res = parse_status(status_stream, response.status_code, response.status_message); !res)
         return toolkit::make_error("failed to parse status line: {}", res.error());
 
-    ParseHeaders(headers_stream, response.Headers);
+    parse_headers(headers_stream, response.headers);
 
     auto content_length = ~size_t();
-    if (auto it = response.Headers.find("content-length"); it != response.Headers.end())
+    if (auto it = response.headers.find("content-length"); it != response.headers.end())
         if (auto res = toolkit::parse_string<size_t>(it->second) >> content_length; !res)
             return res;
 
-    if (response.Body)
-        response.Body->write(body_prefetch.data(), static_cast<long>(body_prefetch.size()));
+    if (response.body)
+        response.body->write(body_prefetch.data(), static_cast<long>(body_prefetch.size()));
 
     auto count = body_prefetch.size();
     while (content_length == ~size_t() || count < content_length)
     {
-        auto len = Read(fd, chunk);
+        auto len = read(fd, chunk);
         if (len <= 0)
             break;
 
-        if (response.Body)
-            response.Body->write(chunk, len);
+        if (response.body)
+            response.body->write(chunk, len);
 
         count += len;
     }
@@ -115,57 +115,57 @@ toolkit::result<> http::Client::Fetch(HttpRequest request, HttpResponse &respons
     return {};
 }
 
-toolkit::result<> http::Client::FetchWithRedirects(HttpRequest request, HttpResponse &response)
+toolkit::result<> http::client::fetch_with_redirects(request_t request, response_t &response)
 {
-    bool is_redirect;
+    bool redirect;
 
     do
     {
-        if (auto res = Fetch(request, response); !res)
+        if (auto res = fetch(request, response); !res)
             return res;
 
-        is_redirect = IsRedirect(response.StatusCode);
+        redirect = is_redirect(response.status_code);
 
-        if (!is_redirect)
+        if (!redirect)
             continue;
 
-        const auto it = response.Headers.find("location");
-        if (it == response.Headers.end())
+        const auto it = response.headers.find("location");
+        if (it == response.headers.end())
             return toolkit::make_error("missing location header in redirect response.");
 
         const auto &location = it->second;
 
         if (location.find("://") != std::string::npos)
-            request.Location = ParseURL(location);
+            request.location = url::parse(location);
         else if (location.starts_with("/"))
-            request.Location.Pathname = location;
+            request.location.pathname = location;
         else
-            request.Location.Pathname += location;
+            request.location.pathname += location;
 
-        std::cerr << "redirect to " << location << " --> " << request.Location << std::endl;
+        std::cerr << "redirect to " << location << " --> " << request.location << std::endl;
     }
-    while (is_redirect);
+    while (redirect);
 
     return {};
 }
 
-int http::Client::Read(const int fd, const std::span<char> buffer)
+int http::client::read(const int fd, const std::span<char> buffer)
 {
-    return m_Transport.recv(fd, buffer.data(), buffer.size(), 0);
+    return transport_.recv(fd, buffer.data(), buffer.size(), 0);
 }
 
-int http::Client::Write(const int fd, const std::span<const char> buffer)
+int http::client::write(const int fd, const std::span<const char> buffer)
 {
-    return m_Transport.send(fd, buffer.data(), buffer.size(), 0);
+    return transport_.send(fd, buffer.data(), buffer.size(), 0);
 }
 
-toolkit::result<> http::Client::ReadUntil(const int fd, std::string &dst, const char *delimiter)
+toolkit::result<> http::client::read_until(const int fd, std::string &dst, const char *delimiter)
 {
     char chunk[1024];
 
     while (dst.find(delimiter) == std::string::npos)
     {
-        const auto len = Read(fd, chunk);
+        const auto len = read(fd, chunk);
         if (len <= 0)
             return toolkit::make_error("failed to read chunk.");
 

@@ -6,20 +6,20 @@
 namespace data
 {
     template<typename>
-    struct serializer
+    struct serializer_t
     {
     };
 
     template<typename N, typename T>
     concept enable_from_data = requires(const N &node, T &value)
     {
-        serializer<std::decay_t<T>>::from_data(node, value);
+        serializer_t<std::decay_t<T>>::from_data(node, value);
     };
 
     template<typename N, typename T>
     concept enable_to_data = requires(N &node, T &&value)
     {
-        serializer<std::decay_t<T>>::to_data(node, std::forward<T>(value));
+        serializer_t<std::decay_t<T>>::to_data(node, std::forward<T>(value));
     };
 }
 

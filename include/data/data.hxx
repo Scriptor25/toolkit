@@ -1,22 +1,18 @@
 #pragma once
 
-#include <string>
 #include <variant>
 
 namespace data
 {
-    using Index = unsigned long long;
-    using Key = std::string;
-
-    using Undefined = std::monostate;
-    using Integer = long long int;
-    using FloatingPoint = long double;
+    using undefined_t = std::monostate;
+    using integer_t = long long int;
+    using floating_point_t = long double;
 
     template<typename...>
-    struct NodeTraits;
+    struct node_traits_t;
 
     template<typename...>
-    struct Node;
+    class node_t;
 
     template<typename N, typename T>
     bool from_data_fn(const N &node, T &value);

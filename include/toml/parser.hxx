@@ -1,55 +1,55 @@
 #pragma once
 
-#include <toolkit/result.hxx>
-
 #include <toml/toml.hxx>
+
+#include <toolkit/result.hxx>
 
 #include <cstdint>
 
 namespace toml
 {
-    class Parser final
+    class parser
     {
-        using Key = std::vector<data::Key>;
+        using key_t = std::vector<std::string>;
 
     public:
-        explicit Parser(std::istream &stream);
+        explicit parser(std::istream &stream);
 
-        toolkit::result<Node> Parse();
+        toolkit::result<node_t> parse();
 
     protected:
-        toolkit::result<Node> ParseValue();
+        toolkit::result<node_t> parse_value();
 
-        toolkit::result<Node> ParseNumber();
-        toolkit::result<Node> ParseString();
-        toolkit::result<Node> ParseLocalDate();
-        toolkit::result<Node> ParseLocalTime();
-        toolkit::result<Node> ParseDateTime();
-        toolkit::result<Node> ParseArray();
-        toolkit::result<Node> ParseTable();
+        toolkit::result<node_t> parse_number();
+        toolkit::result<node_t> parse_string();
+        toolkit::result<node_t> parse_local_date();
+        toolkit::result<node_t> parse_local_time();
+        toolkit::result<node_t> parse_date_time();
+        toolkit::result<node_t> parse_array();
+        toolkit::result<node_t> parse_table();
 
-        toolkit::result<Key> ParseKey();
+        toolkit::result<key_t> parse_key();
 
-        static toolkit::result<Node *> MakeNodeKey(Node &node, const Key &key);
-        static toolkit::result<Node *> MakeNodeKey(Table &nodes, const Key &key);
+        static toolkit::result<node_t *> find_node(node_t &node, const key_t &key);
+        static toolkit::result<node_t *> find_node(table_t &nodes, const key_t &key);
 
-        void Get();
-        char Pop();
+        void get();
+        char pop();
 
-        [[nodiscard]] char Peek() const;
+        [[nodiscard]] char peek() const;
 
-        toolkit::result<uint8_t> PopHalfByte();
-        toolkit::result<uint8_t> PopByte();
+        toolkit::result<uint8_t> pop_nibble();
+        toolkit::result<uint8_t> pop_byte();
 
-        [[nodiscard]] bool At(int c) const;
-        [[nodiscard]] bool AtKey() const;
-        [[nodiscard]] bool AtDigit(int base) const;
+        [[nodiscard]] bool at(int c) const;
+        [[nodiscard]] bool at_key() const;
+        [[nodiscard]] bool at_digit(int base) const;
 
-        bool Skip(char c);
-        bool Skip(std::string_view s);
-        bool SkipWhitespace();
-        bool SkipComment();
-        bool SkipEoL();
+        bool skip(char c);
+        bool skip(std::string_view s);
+        bool skip_whitespace();
+        bool skip_comment();
+        bool skip_eol();
 
     private:
         std::istream &m_Stream;

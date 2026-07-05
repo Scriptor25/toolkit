@@ -1,5 +1,7 @@
 #pragma once
 
+#include <toolkit/result.hxx>
+
 #include <charconv>
 #include <format>
 #include <string>

@@ -1,144 +1,145 @@
 #pragma once
 
 #include <data/serializer.hxx>
+
 #include <json/json.hxx>
 #include <toml/toml.hxx>
 
 template<>
-struct data::serializer<toml::LocalDate>
+struct data::serializer_t<toml::local_date_t>
 {
-    static bool from_data(const json::Node &node, toml::LocalDate &value)
+    static bool from_data(const json::node_t &node, toml::local_date_t &value)
     {
-        if (!node.Is<json::Object>())
+        if (!node.is<json::object_t>())
             return false;
 
         auto ok = true;
 
-        ok &= node["year"] >> value.Year;
-        ok &= node["month"] >> value.Month;
-        ok &= node["day"] >> value.Day;
+        ok &= node["year"] >> value.year;
+        ok &= node["month"] >> value.month;
+        ok &= node["day"] >> value.day;
 
         return ok;
     }
 
-    template<toolkit::same_as<toml::LocalDate> T>
-    static void to_data(json::Node &node, T &&value)
+    template<toolkit::same_as<toml::local_date_t> T>
+    static void to_data(json::node_t &node, T &&value)
     {
-        node = json::Object
+        node = json::object_t
         {
-            { "year", value.Year },
-            { "month", value.Month },
-            { "day", value.Day },
+            { "year", value.year },
+            { "month", value.month },
+            { "day", value.day },
         };
     }
 };
 
 template<>
-struct data::serializer<toml::LocalTime>
+struct data::serializer_t<toml::local_time_t>
 {
-    static bool from_data(const json::Node &node, toml::LocalTime &value)
+    static bool from_data(const json::node_t &node, toml::local_time_t &value)
     {
-        if (!node.Is<json::Object>())
+        if (!node.is<json::object_t>())
             return false;
 
         auto ok = true;
 
-        ok &= node["hour"] >> value.Hour;
-        ok &= node["minute"] >> value.Minute;
-        ok &= node["second"] >> value.Second;
-        ok &= node["fraction"] >> value.Fraction;
+        ok &= node["hour"] >> value.hour;
+        ok &= node["minute"] >> value.minute;
+        ok &= node["second"] >> value.second;
+        ok &= node["fraction"] >> value.fraction;
 
         return ok;
     }
 
-    template<toolkit::same_as<toml::LocalTime> T>
-    static void to_data(json::Node &node, T &&value)
+    template<toolkit::same_as<toml::local_time_t> T>
+    static void to_data(json::node_t &node, T &&value)
     {
-        node = json::Object
+        node = json::object_t
         {
-            { "hour", value.Hour },
-            { "minute", value.Minute },
-            { "second", value.Second },
-            { "fraction", value.Fraction },
+            { "hour", value.hour },
+            { "minute", value.minute },
+            { "second", value.second },
+            { "fraction", value.fraction },
         };
     }
 };
 
 template<>
-struct data::serializer<toml::DateTime::TimeOffset>
+struct data::serializer_t<toml::date_time_t::time_offset_t>
 {
-    static bool from_data(const json::Node &node, toml::DateTime::TimeOffset &value)
+    static bool from_data(const json::node_t &node, toml::date_time_t::time_offset_t &value)
     {
-        if (!node.Is<json::Object>())
+        if (!node.is<json::object_t>())
             return false;
 
         auto ok = true;
 
-        ok &= node["hours"] >> value.Hours;
-        ok &= node["minutes"] >> value.Minutes;
+        ok &= node["hours"] >> value.hours;
+        ok &= node["minutes"] >> value.minutes;
 
         return ok;
     }
 
-    template<toolkit::same_as<toml::DateTime::TimeOffset> T>
-    static void to_data(json::Node &node, T &&value)
+    template<toolkit::same_as<toml::date_time_t::time_offset_t> T>
+    static void to_data(json::node_t &node, T &&value)
     {
-        node = json::Object
+        node = json::object_t
         {
-            { "hours", value.Hours },
-            { "minutes", value.Minutes },
+            { "hours", value.hours },
+            { "minutes", value.minutes },
         };
     }
 };
 
 template<>
-struct data::serializer<toml::DateTime>
+struct data::serializer_t<toml::date_time_t>
 {
-    static bool from_data(const json::Node &node, toml::DateTime &value)
+    static bool from_data(const json::node_t &node, toml::date_time_t &value)
     {
-        if (!node.Is<json::Object>())
+        if (!node.is<json::object_t>())
             return false;
 
         auto ok = true;
 
-        ok &= node["date"] >> value.Date;
-        ok &= node["time"] >> value.Time;
-        ok &= node["offset"] >> value.Offset;
+        ok &= node["date"] >> value.date;
+        ok &= node["time"] >> value.time;
+        ok &= node["offset"] >> value.offset;
 
         return ok;
     }
 
-    template<toolkit::same_as<toml::DateTime> T>
-    static void to_data(json::Node &node, T &&value)
+    template<toolkit::same_as<toml::date_time_t> T>
+    static void to_data(json::node_t &node, T &&value)
     {
-        node = json::Object
+        node = json::object_t
         {
-            { "date", value.Date },
-            { "time", value.Time },
-            { "offset", value.Offset },
+            { "date", value.date },
+            { "time", value.time },
+            { "offset", value.offset },
         };
     }
 };
 
 template<>
-struct data::serializer<toml::Node>
+struct data::serializer_t<toml::node_t>
 {
-    static bool from_data(const json::Node &node, toml::Node &value)
+    static bool from_data(const json::node_t &node, toml::node_t &value)
     {
-        return node >> value.Value;
+        return node >> *value;
     }
 
-    template<toolkit::same_as<toml::Node> T>
-    static void to_data(json::Node &node, T &&value)
+    template<toolkit::same_as<toml::node_t> T>
+    static void to_data(json::node_t &node, T &&value)
     {
-        node = value.Value;
+        node = *value;
     }
 };
 
 template<>
-struct data::serializer<std::nullptr_t>
+struct data::serializer_t<json::null_t>
 {
-    static bool from_data(const toml::Node &node, std::nullptr_t &value)
+    static bool from_data(const toml::node_t &node, json::null_t &value)
     {
         if (!node)
         {
@@ -148,24 +149,24 @@ struct data::serializer<std::nullptr_t>
         return false;
     }
 
-    template<toolkit::same_as<std::nullptr_t> T>
-    static void to_data(toml::Node &node, T &&)
+    template<toolkit::same_as<json::null_t> T>
+    static void to_data(toml::node_t &node, T &&)
     {
-        node = toml::Undefined();
+        node = toml::undefined_t();
     }
 };
 
 template<>
-struct data::serializer<json::Node>
+struct data::serializer_t<json::node_t>
 {
-    static bool from_data(const toml::Node &node, json::Node &value)
+    static bool from_data(const toml::node_t &node, json::node_t &value)
     {
-        return node >> value.Value;
+        return node >> *value;
     }
 
-    template<toolkit::same_as<json::Node> T>
-    static void to_data(toml::Node &node, T &&value)
+    template<toolkit::same_as<json::node_t> T>
+    static void to_data(toml::node_t &node, T &&value)
     {
-        node = value.Value;
+        node = *value;
     }
 };

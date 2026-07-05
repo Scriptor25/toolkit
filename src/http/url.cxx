@@ -2,12 +2,12 @@
 
 #include <iostream>
 
-void http::ParseURL(URL &dst, std::string_view src)
+void http::url::parse(url &dst, std::string_view src)
 {
     const auto scheme_end = src.find("://");
     const auto scheme = src.substr(0, scheme_end);
 
-    dst.Scheme = scheme;
+    dst.scheme = scheme;
 
     const auto host_begin = scheme_end + 3;
     const auto path_begin = src.find('/', host_begin);
@@ -16,7 +16,7 @@ void http::ParseURL(URL &dst, std::string_view src)
                          ? src.substr(host_begin)
                          : src.substr(host_begin, path_begin - host_begin);
 
-    dst.Pathname = path_begin == std::string_view::npos
+    dst.pathname = path_begin == std::string_view::npos
                        ? "/"
                        : src.substr(path_begin);
 
@@ -24,30 +24,30 @@ void http::ParseURL(URL &dst, std::string_view src)
     {
         const std::string port(host_port.substr(colon + 1));
 
-        dst.Host = host_port.substr(0, colon);
-        dst.Port = static_cast<uint16_t>(std::stoi(port));
+        dst.host = host_port.substr(0, colon);
+        dst.port = static_cast<uint16_t>(std::stoi(port));
     }
     else
     {
-        dst.Host = host_port;
-        dst.Port = scheme == "https" ? 443 : scheme == "http" ? 80 : 0;
+        dst.host = host_port;
+        dst.port = scheme == "https" ? 443 : scheme == "http" ? 80 : 0;
     }
 }
 
-http::URL http::ParseURL(const std::string_view src)
+http::url http::url::parse(std::string_view src)
 {
-    URL dst;
-    ParseURL(dst, src);
+    url dst;
+    parse(dst, src);
     return dst;
 }
 
-std::ostream &operator<<(std::ostream &stream, const http::URL &location)
+std::ostream &operator<<(std::ostream &stream, const http::url &location)
 {
     return stream
-           << location.Scheme
+           << location.scheme
            << "://"
-           << location.Host
+           << location.host
            << ":"
-           << location.Port
-           << location.Pathname;
+           << location.port
+           << location.pathname;
 }

@@ -4,9 +4,9 @@
 
 #include <istream>
 
-toolkit::result<> http::ParseStatus(
+toolkit::result<> http::parse_status(
     std::istream &stream,
-    HttpStatusCode &status_code,
+    status_code_t &status_code,
     std::string &status_message)
 {
     std::string http_version;
@@ -24,7 +24,7 @@ toolkit::result<> http::ParseStatus(
     return {};
 }
 
-void http::ParseHeaders(std::istream &stream, HttpHeaders &headers)
+void http::parse_headers(std::istream &stream, headers_t &headers)
 {
     headers.clear();
 
@@ -52,18 +52,18 @@ void http::ParseHeaders(std::istream &stream, HttpHeaders &headers)
     }
 }
 
-std::ostream &operator<<(std::ostream &stream, const http::HttpMethod method)
+std::ostream &operator<<(std::ostream &stream, const http::method_t method)
 {
-    static const std::map<http::HttpMethod, const char *> map
+    static const std::map<http::method_t, const char *> map
     {
-        { http::HttpMethod::Get, "GET" },
-        { http::HttpMethod::Head, "HEAD" },
-        { http::HttpMethod::Post, "POST" },
-        { http::HttpMethod::Put, "PUT" },
-        { http::HttpMethod::Delete, "DELETE" },
-        { http::HttpMethod::Connect, "CONNECT" },
-        { http::HttpMethod::Options, "OPTIONS" },
-        { http::HttpMethod::Trace, "TRACE" },
+        { http::method_t::GET, "GET" },
+        { http::method_t::HEAD, "HEAD" },
+        { http::method_t::POST, "POST" },
+        { http::method_t::PUT, "PUT" },
+        { http::method_t::DELETE, "DELETE" },
+        { http::method_t::CONNECT, "CONNECT" },
+        { http::method_t::OPTIONS, "OPTIONS" },
+        { http::method_t::TRACE, "TRACE" },
     };
 
     if (const auto it = map.find(method); it != map.end())
@@ -74,15 +74,15 @@ std::ostream &operator<<(std::ostream &stream, const http::HttpMethod method)
     return stream << "undefined";
 }
 
-std::ostream &operator<<(std::ostream &stream, http::HttpStatusCode status_code)
+std::ostream &operator<<(std::ostream &stream, http::status_code_t status_code)
 {
     return stream << static_cast<int>(status_code);
 }
 
-std::istream &operator>>(std::istream &stream, http::HttpStatusCode &status_code)
+std::istream &operator>>(std::istream &stream, http::status_code_t &status_code)
 {
     int status_code_int;
     stream >> status_code_int;
-    status_code = static_cast<http::HttpStatusCode>(status_code_int);
+    status_code = static_cast<http::status_code_t>(status_code_int);
     return stream;
 }
