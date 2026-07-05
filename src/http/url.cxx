@@ -34,7 +34,7 @@ void http::url::parse(url &dst, std::string_view src)
     }
 }
 
-http::url http::url::parse(std::string_view src)
+http::url http::url::parse(const std::string_view src)
 {
     url dst;
     parse(dst, src);

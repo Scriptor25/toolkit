@@ -20,7 +20,7 @@ toolkit::result<> http::parse_status(
     stream >> code;
     toolkit::get_line(stream, message, EOL);
 
-    message = toolkit::trim(std::move(message));
+    message = toolkit::trim(message);
     return {};
 }
 
@@ -45,10 +45,10 @@ void http::parse_headers(std::istream &stream, headers_t &headers)
         auto key = line.substr(0, colon);
         auto val = line.substr(colon + 1);
 
-        key = toolkit::trim(std::move(key));
-        val = toolkit::trim(std::move(val));
+        key = toolkit::trim(key);
+        val = toolkit::trim(val);
 
-        headers.emplace(toolkit::lowercase(std::move(key)), std::move(val));
+        headers.emplace(toolkit::lowercase(key), std::move(val));
     }
 }
 

@@ -69,8 +69,8 @@ const args::entry *args::manifest::find(const std::string_view pattern) const
 toolkit::result<> args::context::parse_argument(
     context &ctx,
     const entry &e,
-    std::string_view key,
-    std::string_view val)
+    const std::string_view key,
+    const std::string_view val)
 {
     auto &dst = ctx.values_[e.id];
 

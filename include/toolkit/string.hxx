@@ -5,91 +5,119 @@
 #include <charconv>
 #include <format>
 #include <string>
-#include <type_traits>
 #include <unordered_map>
 #include <vector>
 
 namespace toolkit
 {
-    template<typename T>
-    concept span = requires(T t)
+    template<typename S>
+    void split(
+        std::vector<S> &dst,
+        std::basic_string_view<typename S::value_type> src,
+        std::basic_string_view<typename S::value_type> delim)
     {
-        t.begin();
-        t.end();
-        t.rbegin();
-        t.rend();
-    };
-
-    template<typename S, std::convertible_to<std::string_view> D>
-    void split(std::vector<std::decay_t<S>> &vec, S &&str, const D &delim)
-    {
-        vec.clear();
+        dst.clear();
 
         size_t b{}, e{};
-        for (; (e = str.find(delim, b)) != std::decay_t<S>::npos; b = e + delim.size())
+        for (; (e = src.find(delim, b)) != std::basic_string_view<typename S::value_type>::npos; b = e + delim.size())
             if (b != e)
-                vec.push_back(str.substr(b, e - b));
+                dst.push_back(src.substr(b, e - b));
 
         if (b != e)
-            vec.push_back(str.substr(b, e - b));
+            dst.push_back(src.substr(b, e - b));
     }
 
-    template<typename S, typename D>
-    void split(std::vector<std::decay_t<S>> &vec, S &&str, D delim)
+    template<typename S>
+    void split(
+        std::vector<S> &dst,
+        std::basic_string_view<typename S::value_type> src,
+        typename S::value_type delim)
     {
-        vec.clear();
+        dst.clear();
 
         size_t b{}, e{};
-        for (; (e = str.find(delim, b)) != std::decay_t<S>::npos; b = e + 1)
+        for (; (e = src.find(delim, b)) != std::basic_string_view<typename S::value_type>::npos; b = e + 1)
             if (b != e)
-                vec.push_back(str.substr(b, e - b));
+                dst.push_back(src.substr(b, e - b));
 
         if (b != e)
-            vec.push_back(str.substr(b, e - b));
+            dst.push_back(src.substr(b, e - b));
     }
 
-    template<typename S, typename D>
-    std::vector<std::decay_t<S>> split(S &&str, D &&delim)
+    template<typename S>
+    std::vector<S> split(const S &src, typename S::value_type delim)
     {
-        std::vector<std::decay_t<S>> vec;
-        split(vec, std::forward<S>(str), std::forward<D>(delim));
-        return vec;
+        std::vector<S> dst;
+        split(dst, src, delim);
+        return dst;
     }
 
-    template<typename S, typename D>
-    void join(S &str, const std::vector<S> &vec, D delim)
+    template<typename S>
+    std::vector<S> split(const S &src, std::basic_string_view<typename S::value_type> delim)
     {
-        str.clear();
+        std::vector<S> dst;
+        split(dst, src, delim);
+        return dst;
+    }
 
-        for (auto it = vec.begin(); it != vec.end(); ++it)
+    template<typename S>
+    void join(
+        std::basic_string<typename S::value_type> &dst,
+        std::span<const S> src,
+        typename S::value_type delim)
+    {
+        dst.clear();
+
+        for (auto it = src.begin(); it != src.end(); ++it)
         {
-            if (it != vec.begin())
-                str += delim;
+            if (it != src.begin())
+                dst += delim;
 
-            str += *it;
+            dst += *it;
         }
     }
 
-    template<typename S, typename D>
-    S join(const std::vector<S> &vec, D delim)
+    template<typename S>
+    void join(
+        std::basic_string<typename S::value_type> &dst,
+        std::span<const S> src,
+        std::basic_string_view<typename S::value_type> delim)
     {
-        S str;
+        dst.clear();
 
-        for (auto it = vec.begin(); it != vec.end(); ++it)
+        for (auto it = src.begin(); it != src.end(); ++it)
         {
-            if (it != vec.begin())
-                str += delim;
+            if (it != src.begin())
+                dst += delim;
 
-            str += *it;
+            dst += *it;
         }
-
-        return str;
     }
 
-    template<span S>
-    void trim(S &dst, const S &src)
+    template<typename S>
+    std::basic_string<typename S::value_type> join(
+        std::span<const S> src,
+        typename S::value_type delim)
     {
-        using I = std::decay_t<S>::const_iterator;
+        std::basic_string<typename S::value_type> dst;
+        join(dst, src, delim);
+        return dst;
+    }
+
+    template<typename S>
+    std::basic_string<typename S::value_type> join(
+        std::span<const S> src,
+        std::basic_string_view<typename S::value_type> delim)
+    {
+        std::basic_string<typename S::value_type> dst;
+        join(dst, src, delim);
+        return dst;
+    }
+
+    template<typename S>
+    void trim(std::basic_string<typename S::value_type> &dst, const S &src)
+    {
+        using I = S::const_iterator;
 
         I begin, end;
 
@@ -110,44 +138,30 @@ namespace toolkit
         dst = { begin, end };
     }
 
-    template<span S>
-    S trim(const S &src)
+    template<typename S>
+    std::basic_string<typename S::value_type> trim(const S &src)
     {
-        using I = std::decay_t<S>::const_iterator;
-
-        I begin, end;
-
-        for (auto it = src.begin(); it != src.end(); ++it)
-            if (*it > 0x20)
-            {
-                begin = it;
-                break;
-            }
-
-        for (auto it = src.rbegin(); it != src.rend(); ++it)
-            if (*it > 0x20)
-            {
-                end = it.base();
-                break;
-            }
-
-        return { begin, end };
+        std::basic_string<typename S::value_type> dst;
+        trim(dst, src);
+        return dst;
     }
 
-    template<span S>
-    S lowercase(S str)
+    template<typename S>
+    std::basic_string<typename S::value_type> lowercase(const S &src)
     {
-        for (auto &c : str)
-            c = std::tolower(c);
-        return str;
+        std::basic_string<typename S::value_type> dst(src.size(), 0);
+        for (size_t i = 0; i < src.size(); ++i)
+            dst[i] = std::tolower(src[i]);
+        return dst;
     }
 
-    template<span S>
-    S uppercase(S str)
+    template<typename S>
+    std::basic_string<typename S::value_type> uppercase(const S &src)
     {
-        for (auto &c : str)
-            c = std::toupper(c);
-        return str;
+        std::basic_string<typename S::value_type> dst(src.size(), 0);
+        for (size_t i = 0; i < src.size(); ++i)
+            dst[i] = std::toupper(src[i]);
+        return dst;
     }
 
     std::istream &get_line(std::istream &stream, std::string &string, std::string_view delimiter);
