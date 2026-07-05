@@ -13,7 +13,7 @@ namespace http
     constexpr auto EOL = "\r\n";
     constexpr auto EOL2 = "\r\n\r\n";
 
-    enum class method_t
+    enum class method
     {
         GET,
         HEAD,
@@ -25,7 +25,7 @@ namespace http
         TRACE,
     };
 
-    enum class status_code_t : int
+    enum class status_code : int
     {
         continue_           = 100,
         switching_protocols = 101,
@@ -51,7 +51,7 @@ namespace http
         unauthorized                  = 401,
         payment_required              = 402,
         forbidden                     = 403,
-        notfound                      = 404,
+        not_found                     = 404,
         method_not_allowed            = 405,
         not_acceptable                = 406,
         proxy_authentication_required = 407,
@@ -77,36 +77,36 @@ namespace http
         http_version_not_supported = 505,
     };
 
-    inline bool is_directive(status_code_t status_code)
+    inline bool is_directive(status_code code)
     {
-        return 100 <= static_cast<int>(status_code) && static_cast<int>(status_code) <= 199;
+        return 100 <= static_cast<int>(code) && static_cast<int>(code) <= 199;
     }
 
-    inline bool is_success(status_code_t status_code)
+    inline bool is_success(status_code code)
     {
-        return 200 <= static_cast<int>(status_code) && static_cast<int>(status_code) <= 299;
+        return 200 <= static_cast<int>(code) && static_cast<int>(code) <= 299;
     }
 
-    inline bool is_redirect(status_code_t status_code)
+    inline bool is_redirect(status_code code)
     {
-        return 300 <= static_cast<int>(status_code) && static_cast<int>(status_code) <= 399;
+        return 300 <= static_cast<int>(code) && static_cast<int>(code) <= 399;
     }
 
-    inline bool is_client_fail(status_code_t status_code)
+    inline bool is_client_fail(status_code code)
     {
-        return 400 <= static_cast<int>(status_code) && static_cast<int>(status_code) <= 499;
+        return 400 <= static_cast<int>(code) && static_cast<int>(code) <= 499;
     }
 
-    inline bool is_server_fail(status_code_t status_code)
+    inline bool is_server_fail(status_code code)
     {
-        return 500 <= static_cast<int>(status_code) && static_cast<int>(status_code) <= 599;
+        return 500 <= static_cast<int>(code) && static_cast<int>(code) <= 599;
     }
 
     using headers_t = std::map<std::string, std::string>;
 
     struct request_t
     {
-        method_t method;
+        method method;
         url location;
         headers_t headers;
         std::istream *body;
@@ -114,29 +114,29 @@ namespace http
 
     struct response_t
     {
-        status_code_t status_code;
-        std::string status_message;
+        status_code code;
+        std::string message;
         headers_t headers;
         std::ostream *body;
     };
 
     [[nodiscard]] toolkit::result<> parse_status(
         std::istream &stream,
-        status_code_t &status_code,
-        std::string &status_message);
+        status_code &code,
+        std::string &message);
     void parse_headers(std::istream &stream, headers_t &headers);
 }
 
-std::ostream &operator<<(std::ostream &stream, http::method_t method);
+std::ostream &operator<<(std::ostream &stream, http::method method);
 
-std::ostream &operator<<(std::ostream &stream, http::status_code_t status_code);
-std::istream &operator>>(std::istream &stream, http::status_code_t &status_code);
+std::ostream &operator<<(std::ostream &stream, http::status_code code);
+std::istream &operator>>(std::istream &stream, http::status_code &code);
 
 template<>
-struct std::formatter<http::status_code_t> : std::formatter<int>
+struct std::formatter<http::status_code> : std::formatter<int>
 {
     template<typename C>
-    auto format(http::status_code_t status_code, C &&ctx) const
+    auto format(http::status_code status_code, C &&ctx) const
     {
         return std::formatter<int>::format(static_cast<int>(status_code), ctx);
     }

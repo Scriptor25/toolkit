@@ -6,8 +6,8 @@
 
 toolkit::result<> http::parse_status(
     std::istream &stream,
-    status_code_t &status_code,
-    std::string &status_message)
+    status_code &code,
+    std::string &message)
 {
     std::string http_version;
     stream >> http_version;
@@ -17,10 +17,10 @@ toolkit::result<> http::parse_status(
         return toolkit::make_error("invalid http version '{}'.", http_version);
     }
 
-    stream >> status_code;
-    toolkit::get_line(stream, status_message, EOL);
+    stream >> code;
+    toolkit::get_line(stream, message, EOL);
 
-    status_message = toolkit::trim(std::move(status_message));
+    message = toolkit::trim(std::move(message));
     return {};
 }
 
@@ -52,18 +52,18 @@ void http::parse_headers(std::istream &stream, headers_t &headers)
     }
 }
 
-std::ostream &operator<<(std::ostream &stream, const http::method_t method)
+std::ostream &operator<<(std::ostream &stream, const http::method method)
 {
-    static const std::map<http::method_t, const char *> map
+    static const std::map<http::method, const char *> map
     {
-        { http::method_t::GET, "GET" },
-        { http::method_t::HEAD, "HEAD" },
-        { http::method_t::POST, "POST" },
-        { http::method_t::PUT, "PUT" },
-        { http::method_t::DELETE, "DELETE" },
-        { http::method_t::CONNECT, "CONNECT" },
-        { http::method_t::OPTIONS, "OPTIONS" },
-        { http::method_t::TRACE, "TRACE" },
+        { http::method::GET, "GET" },
+        { http::method::HEAD, "HEAD" },
+        { http::method::POST, "POST" },
+        { http::method::PUT, "PUT" },
+        { http::method::DELETE, "DELETE" },
+        { http::method::CONNECT, "CONNECT" },
+        { http::method::OPTIONS, "OPTIONS" },
+        { http::method::TRACE, "TRACE" },
     };
 
     if (const auto it = map.find(method); it != map.end())
@@ -74,15 +74,15 @@ std::ostream &operator<<(std::ostream &stream, const http::method_t method)
     return stream << "undefined";
 }
 
-std::ostream &operator<<(std::ostream &stream, http::status_code_t status_code)
+std::ostream &operator<<(std::ostream &stream, http::status_code code)
 {
-    return stream << static_cast<int>(status_code);
+    return stream << static_cast<int>(code);
 }
 
-std::istream &operator>>(std::istream &stream, http::status_code_t &status_code)
+std::istream &operator>>(std::istream &stream, http::status_code &code)
 {
     int status_code_int;
     stream >> status_code_int;
-    status_code = static_cast<http::status_code_t>(status_code_int);
+    code = static_cast<http::status_code>(status_code_int);
     return stream;
 }

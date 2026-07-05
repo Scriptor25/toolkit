@@ -86,7 +86,7 @@ toolkit::result<> http::client::fetch(request_t request, response_t &response)
     toolkit::get_line(headers_stream, status_line, EOL);
 
     std::istringstream status_stream(status_line);
-    if (auto res = parse_status(status_stream, response.status_code, response.status_message); !res)
+    if (auto res = parse_status(status_stream, response.code, response.message); !res)
         return toolkit::make_error("failed to parse status line: {}", res.error());
 
     parse_headers(headers_stream, response.headers);
@@ -124,7 +124,7 @@ toolkit::result<> http::client::fetch_with_redirects(request_t request, response
         if (auto res = fetch(request, response); !res)
             return res;
 
-        redirect = is_redirect(response.status_code);
+        redirect = is_redirect(response.code);
 
         if (!redirect)
             continue;
