@@ -15,14 +15,14 @@ namespace http
 
     enum class method
     {
-        GET,
-        HEAD,
-        POST,
-        PUT,
-        DELETE,
-        CONNECT,
-        OPTIONS,
-        TRACE,
+        get,
+        head,
+        post_,
+        put,
+        delete_,
+        connect,
+        options,
+        trace,
     };
 
     enum class status_code : int
@@ -106,7 +106,7 @@ namespace http
 
     struct request_t
     {
-        method method;
+        ::http::method method;
         url location;
         headers_t headers;
         std::istream *body;

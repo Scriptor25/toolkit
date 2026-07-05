@@ -56,14 +56,14 @@ std::ostream &operator<<(std::ostream &stream, const http::method method)
 {
     static const std::map<http::method, const char *> map
     {
-        { http::method::GET, "GET" },
-        { http::method::HEAD, "HEAD" },
-        { http::method::POST, "POST" },
-        { http::method::PUT, "PUT" },
-        { http::method::DELETE, "DELETE" },
-        { http::method::CONNECT, "CONNECT" },
-        { http::method::OPTIONS, "OPTIONS" },
-        { http::method::TRACE, "TRACE" },
+        { http::method::get, "GET" },
+        { http::method::head, "HEAD" },
+        { http::method::post_, "POST" },
+        { http::method::put, "PUT" },
+        { http::method::delete_, "DELETE" },
+        { http::method::connect, "CONNECT" },
+        { http::method::options, "OPTIONS" },
+        { http::method::trace, "TRACE" },
     };
 
     if (const auto it = map.find(method); it != map.end())

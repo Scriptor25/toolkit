@@ -24,7 +24,7 @@ static void set_header_if_missing(http::headers_t &headers, const std::string &k
     headers.emplace(key, val);
 }
 
-toolkit::result<> http::client::fetch(request_t request, response_t &response)
+toolkit::result<> http::client::fetch(request_t request, response_t &response) const
 {
     int fd;
     if (auto res = transport_.open(request.location) >> fd; !res)
@@ -115,7 +115,7 @@ toolkit::result<> http::client::fetch(request_t request, response_t &response)
     return {};
 }
 
-toolkit::result<> http::client::fetch_with_redirects(request_t request, response_t &response)
+toolkit::result<> http::client::fetch_with_redirects(request_t request, response_t &response) const
 {
     bool redirect;
 
@@ -149,17 +149,17 @@ toolkit::result<> http::client::fetch_with_redirects(request_t request, response
     return {};
 }
 
-int http::client::read(const int fd, const std::span<char> buffer)
+int http::client::read(const int fd, const std::span<char> buffer) const
 {
     return transport_.recv(fd, buffer.data(), buffer.size(), 0);
 }
 
-int http::client::write(const int fd, const std::span<const char> buffer)
+int http::client::write(const int fd, const std::span<const char> buffer) const
 {
     return transport_.send(fd, buffer.data(), buffer.size(), 0);
 }
 
-toolkit::result<> http::client::read_until(const int fd, std::string &dst, const char *delimiter)
+toolkit::result<> http::client::read_until(const int fd, std::string &dst, const char *delimiter) const
 {
     char chunk[1024];
 
