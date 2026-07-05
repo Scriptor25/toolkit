@@ -701,7 +701,7 @@ bool data::from_data_fn(const N &node, T &value)
 
     if constexpr (enable_from_data<N, U>)
     {
-        return serializer_t<U>::from_data(node, value);
+        return serializer<U>::from_data(node, value);
     }
     else
     {
@@ -717,7 +717,7 @@ void data::to_data_fn(N &node, T &&value)
 
     if constexpr (enable_to_data<N, U>)
     {
-        return serializer_t<U>::to_data(node, std::forward<T>(value));
+        return serializer<U>::to_data(node, std::forward<T>(value));
     }
     else
     {

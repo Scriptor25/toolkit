@@ -9,7 +9,7 @@ struct test_t
 };
 
 template<>
-struct data::serializer_t<test_t>
+struct data::serializer<test_t>
 {
     static bool from_data(const toml::node_t &node, test_t &value)
     {
