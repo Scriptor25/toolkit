@@ -4,6 +4,8 @@
 
 #include <toolkit/result.hxx>
 
+#include <span>
+
 namespace http
 {
     struct Transport

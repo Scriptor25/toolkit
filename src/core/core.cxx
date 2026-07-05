@@ -264,7 +264,7 @@ std::istream &toolkit::get_line(std::istream &stream, std::string &string, const
     return stream;
 }
 
-const std::unordered_map<std::errc, const char *> toolkit::__errc_strings
+const std::unordered_map<std::errc, const char *> toolkit::error_strings_map
 {
     { std::errc::address_family_not_supported, "address_family_not_supported" },
     { std::errc::address_in_use, "address_in_use" },

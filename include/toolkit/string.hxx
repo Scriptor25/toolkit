@@ -162,14 +162,14 @@ namespace toolkit
     }
 
     template<typename C>
-    auto __format_string(C &&ctx, const std::string_view str)
+    auto write_format_string(C &&ctx, const std::string_view str)
     {
         for (auto c : str)
             *ctx.out()++ = c;
         return ctx.out();
     }
 
-    extern const std::unordered_map<std::errc, const char *> __errc_strings;
+    extern const std::unordered_map<std::errc, const char *> error_strings_map;
 }
 
 template<>
@@ -184,11 +184,11 @@ struct std::formatter<std::errc>
     template<typename C>
     auto format(const std::errc &value, C &&ctx) const
     {
-        if (const auto it = toolkit::__errc_strings.find(value); it != toolkit::__errc_strings.end())
+        if (const auto it = toolkit::error_strings_map.find(value); it != toolkit::error_strings_map.end())
         {
-            return toolkit::__format_string(ctx, it->second);
+            return toolkit::write_format_string(ctx, it->second);
         }
 
-        return toolkit::__format_string(ctx, "undefined");
+        return toolkit::write_format_string(ctx, "undefined");
     }
 };
