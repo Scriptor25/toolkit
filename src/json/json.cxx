@@ -20,31 +20,31 @@ static std::ostream &indent_depth(std::ostream &stream, const std::size_t indent
     return stream << std::string(indent * depth, ' ');
 }
 
-static std::ostream &print_fn(std::ostream &stream, const unsigned indent, const json::node_t::value_type &value)
+static std::ostream &print_fn(std::ostream &stream, const unsigned indent, const json::node::value_type &value)
 {
     struct
     {
-        void operator()(json::undefined_t) const
+        void operator()(json::undefined) const
         {
             stream << "<undefined>";
         }
 
-        void operator()(json::null_t) const
+        void operator()(json::null) const
         {
             stream << "null";
         }
 
-        void operator()(const json::boolean_t value) const
+        void operator()(const json::boolean value) const
         {
             stream << (value ? "true" : "false");
         }
 
-        void operator()(const json::integer_t value) const
+        void operator()(const json::integer value) const
         {
             stream << value;
         }
 
-        void operator()(const json::floating_point_t value) const
+        void operator()(const json::floating_point value) const
         {
             const auto flags = stream.flags();
 
@@ -53,7 +53,7 @@ static std::ostream &print_fn(std::ostream &stream, const unsigned indent, const
             stream.flags(flags);
         }
 
-        void operator()(const json::string_t &value) const
+        void operator()(const json::string &value) const
         {
             stream << '"';
 
@@ -107,7 +107,7 @@ static std::ostream &print_fn(std::ostream &stream, const unsigned indent, const
             stream << '"';
         }
 
-        void operator()(const json::array_t &value) const
+        void operator()(const json::array &value) const
         {
             if (indent)
             {
@@ -182,7 +182,7 @@ static std::ostream &print_fn(std::ostream &stream, const unsigned indent, const
             }
         }
 
-        void operator()(const json::object_t &value) const
+        void operator()(const json::object &value) const
         {
             if (indent)
             {
@@ -265,12 +265,12 @@ static std::ostream &print_fn(std::ostream &stream, const unsigned indent, const
 }
 
 std::ostream &data::node_traits<
-    json::null_t,
-    json::boolean_t,
-    json::integer_t,
-    json::floating_point_t,
-    json::string_t
->::print(std::ostream &stream, const json::node_t &node)
+    json::null,
+    json::boolean,
+    json::integer,
+    json::floating_point,
+    json::string
+>::print(std::ostream &stream, const json::node &node)
 {
     const auto indent = stream.width();
 
@@ -280,12 +280,12 @@ std::ostream &data::node_traits<
 }
 
 std::istream &data::node_traits<
-    json::null_t,
-    json::boolean_t,
-    json::integer_t,
-    json::floating_point_t,
-    json::string_t
->::parse(std::istream &stream, json::node_t &node)
+    json::null,
+    json::boolean,
+    json::integer,
+    json::floating_point,
+    json::string
+>::parse(std::istream &stream, json::node &node)
 {
     json::parser parser(stream);
     if (auto result = parser.parse())

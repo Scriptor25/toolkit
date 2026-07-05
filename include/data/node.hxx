@@ -24,7 +24,7 @@ namespace data
     };
 
     template<typename T>
-    concept node = is_node<std::decay_t<T>>::value;
+    concept node_type = is_node<std::decay_t<T>>::value;
 
     template<typename T, typename N>
     concept node_value_of = std::same_as<std::decay_t<T>, typename N::value_type>;
@@ -414,20 +414,20 @@ namespace data
     }
 }
 
-template<data::node N>
+template<data::node_type N>
 bool from_data(const N &node, N &value)
 {
     value = node;
     return true;
 }
 
-template<data::node N, toolkit::same_as<N> T>
+template<data::node_type N, toolkit::same_as<N> T>
 void to_data(N &node, T &&value)
 {
     node = std::forward<T>(value);
 }
 
-template<data::node N, data::primitive<N> T>
+template<data::node_type N, data::primitive<N> T>
 bool from_data(const N &node, T &value)
 {
     if (node.template is<T>())
@@ -439,13 +439,13 @@ bool from_data(const N &node, T &value)
     return false;
 }
 
-template<data::node N, data::primitive<N> T>
+template<data::node_type N, data::primitive<N> T>
 void to_data(N &node, T &&value)
 {
     node = N(std::forward<T>(value));
 }
 
-template<data::node N, data::floating_point<N> T>
+template<data::node_type N, data::floating_point<N> T>
 bool from_data(const N &node, T &value)
 {
     if (data::floating_point_type val; node >> val)
@@ -457,13 +457,13 @@ bool from_data(const N &node, T &value)
     return false;
 }
 
-template<data::node N, data::floating_point<N> T>
+template<data::node_type N, data::floating_point<N> T>
 void to_data(N &node, T &&value)
 {
     node = static_cast<data::floating_point_type>(std::forward<T>(value));
 }
 
-template<data::node N, data::integral<N> T>
+template<data::node_type N, data::integral<N> T>
 bool from_data(const N &node, T &value)
 {
     if (data::integer_type val; node >> val)
@@ -475,13 +475,13 @@ bool from_data(const N &node, T &value)
     return false;
 }
 
-template<data::node N, data::integral<N> T>
+template<data::node_type N, data::integral<N> T>
 void to_data(N &node, T &&value)
 {
     node = static_cast<data::integer_type>(std::forward<T>(value));
 }
 
-template<data::node N, typename T>
+template<data::node_type N, typename T>
 bool from_data(const N &node, std::vector<T> &value)
 {
     using vec_type = N::vec_type;
@@ -498,7 +498,7 @@ bool from_data(const N &node, std::vector<T> &value)
     return ok;
 }
 
-template<data::node N, toolkit::vector_type T>
+template<data::node_type N, toolkit::vector_type T>
 void to_data(N &node, T &&value)
 {
     using vec_type = N::vec_type;
@@ -509,7 +509,7 @@ void to_data(N &node, T &&value)
         node[i] = value[i];
 }
 
-template<data::node N, typename T, std::size_t S>
+template<data::node_type N, typename T, std::size_t S>
 bool from_data(const N &node, std::array<T, S> &value)
 {
     using vec_type = N::vec_type;
@@ -526,7 +526,7 @@ bool from_data(const N &node, std::array<T, S> &value)
     return ok;
 }
 
-template<data::node N, toolkit::array_type T>
+template<data::node_type N, toolkit::array_type T>
 void to_data(N &node, T &&value)
 {
     using vec_type = N::vec_type;
@@ -537,7 +537,7 @@ void to_data(N &node, T &&value)
         node[i] = value[i];
 }
 
-template<data::node N, typename T>
+template<data::node_type N, typename T>
 bool from_data(const N &node, std::set<T> &value)
 {
     if (std::vector<T> val; node >> val)
@@ -549,13 +549,13 @@ bool from_data(const N &node, std::set<T> &value)
     return false;
 }
 
-template<data::node N, toolkit::set_type T>
+template<data::node_type N, toolkit::set_type T>
 void to_data(N &node, T &&value)
 {
     node = std::vector(value.begin(), value.end());
 }
 
-template<data::node N, typename T>
+template<data::node_type N, typename T>
 bool from_data(const N &node, std::unordered_set<T> &value)
 {
     if (std::vector<T> val; node >> val)
@@ -567,13 +567,13 @@ bool from_data(const N &node, std::unordered_set<T> &value)
     return false;
 }
 
-template<data::node N, toolkit::unordered_set_type T>
+template<data::node_type N, toolkit::unordered_set_type T>
 void to_data(N &node, T &&value)
 {
     node = std::vector(value.begin(), value.end());
 }
 
-template<data::node N, typename T>
+template<data::node_type N, typename T>
 bool from_data(const N &node, std::map<std::string, T> &value)
 {
     using map_type = N::map_type;
@@ -588,7 +588,7 @@ bool from_data(const N &node, std::map<std::string, T> &value)
     return ok;
 }
 
-template<data::node N, toolkit::map_type T>
+template<data::node_type N, toolkit::map_type T>
 void to_data(N &node, T &&value)
 {
     using map_type = N::map_type;
@@ -599,7 +599,7 @@ void to_data(N &node, T &&value)
         node[key] = val;
 }
 
-template<data::node N, typename T>
+template<data::node_type N, typename T>
 bool from_data(const N &node, std::unordered_map<std::string, T> &value)
 {
     using map_type = N::map_type;
@@ -614,7 +614,7 @@ bool from_data(const N &node, std::unordered_map<std::string, T> &value)
     return ok;
 }
 
-template<data::node N, toolkit::unordered_map_type T>
+template<data::node_type N, toolkit::unordered_map_type T>
 void to_data(N &node, T &&value)
 {
     using map_type = N::map_type;
@@ -625,7 +625,7 @@ void to_data(N &node, T &&value)
         node[key] = val;
 }
 
-template<data::node N, typename T>
+template<data::node_type N, typename T>
 bool from_data(const N &node, std::optional<T> &value)
 {
     if (!node)
@@ -643,7 +643,7 @@ bool from_data(const N &node, std::optional<T> &value)
     return false;
 }
 
-template<data::node N, toolkit::optional_type T>
+template<data::node_type N, toolkit::optional_type T>
 void to_data(N &node, T &&value)
 {
     if (value.has_value())
@@ -655,7 +655,7 @@ void to_data(N &node, T &&value)
     node = data::undefined_type();
 }
 
-template<data::node N, typename... T>
+template<data::node_type N, typename... T>
 bool from_data(const N &node, std::variant<T...> &value)
 {
     auto try_from_json = [&]<typename U>() -> bool
@@ -671,7 +671,7 @@ bool from_data(const N &node, std::variant<T...> &value)
     return (try_from_json.template operator()<T>() || ...);
 }
 
-template<data::node N, toolkit::variant_type T>
+template<data::node_type N, toolkit::variant_type T>
 void to_data(N &node, T &&value)
 {
     std::visit(
@@ -682,7 +682,7 @@ void to_data(N &node, T &&value)
         std::forward<T>(value));
 }
 
-template<data::node N, typename T>
+template<data::node_type N, typename T>
 bool from_data_opt(const N &node, T &value, T default_value = {})
 {
     if (std::optional<T> val; node >> val)

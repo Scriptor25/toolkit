@@ -4,16 +4,16 @@
 
 struct test_t
 {
-    toml::integer_t foo{};
-    toml::boolean_t bar{};
+    toml::integer foo{};
+    toml::boolean bar{};
 };
 
 template<>
 struct data::serializer<test_t>
 {
-    static bool from_data(const toml::node_t &node, test_t &value)
+    static bool from_data(const toml::node &node, test_t &value)
     {
-        if (!node.is<toml::table_t>())
+        if (!node.is<toml::table>())
             return false;
 
         auto ok = true;
@@ -27,13 +27,13 @@ struct data::serializer<test_t>
 
 int main()
 {
-    json::node_t json_node = json::object_t
+    json::node json_node = json::object
     {
         { "foo", 123 },
         { "bar", true },
     };
 
-    toml::node_t toml_node = json_node;
+    toml::node toml_node = json_node;
 
     test_t value;
     toml_node >> value;

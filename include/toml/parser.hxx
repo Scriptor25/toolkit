@@ -15,23 +15,23 @@ namespace toml
     public:
         explicit parser(std::istream &stream);
 
-        toolkit::result<node_t> parse();
+        toolkit::result<node> parse();
 
     protected:
-        toolkit::result<node_t> parse_value();
+        toolkit::result<node> parse_value();
 
-        toolkit::result<node_t> parse_number();
-        toolkit::result<node_t> parse_string();
-        toolkit::result<node_t> parse_local_date();
-        toolkit::result<node_t> parse_local_time();
-        toolkit::result<node_t> parse_date_time();
-        toolkit::result<node_t> parse_array();
-        toolkit::result<node_t> parse_table();
+        toolkit::result<node> parse_number();
+        toolkit::result<node> parse_string();
+        toolkit::result<node> parse_local_date();
+        toolkit::result<node> parse_local_time();
+        toolkit::result<node> parse_date_time();
+        toolkit::result<node> parse_array();
+        toolkit::result<node> parse_table();
 
         toolkit::result<key_t> parse_key();
 
-        static toolkit::result<node_t *> find_node(node_t &node, const key_t &key);
-        static toolkit::result<node_t *> find_node(table_t &nodes, const key_t &key);
+        static toolkit::result<node *> find_node(node &root, const key_t &key);
+        static toolkit::result<node *> find_node(table &root, const key_t &key);
 
         void get();
         char pop();

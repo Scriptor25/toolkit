@@ -13,13 +13,13 @@ namespace json
     public:
         explicit parser(std::istream &stream);
 
-        [[nodiscard]] toolkit::result<node_t> parse();
+        [[nodiscard]] toolkit::result<node> parse();
 
     protected:
-        [[nodiscard]] toolkit::result<node_t> parse_number();
-        [[nodiscard]] toolkit::result<node_t> parse_string();
-        [[nodiscard]] toolkit::result<node_t> parse_array();
-        [[nodiscard]] toolkit::result<node_t> parse_object();
+        [[nodiscard]] toolkit::result<node> parse_number();
+        [[nodiscard]] toolkit::result<node> parse_string();
+        [[nodiscard]] toolkit::result<node> parse_array();
+        [[nodiscard]] toolkit::result<node> parse_object();
 
         void get();
         char pop();

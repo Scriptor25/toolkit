@@ -6,34 +6,34 @@
 
 namespace json
 {
-    using undefined_t = data::undefined_type;
-    using null_t = std::nullptr_t;
-    using boolean_t = bool;
-    using integer_t = data::integer_type;
-    using floating_point_t = data::floating_point_type;
-    using string_t = std::string;
+    using undefined = data::undefined_type;
+    using null = std::nullptr_t;
+    using boolean = bool;
+    using integer = data::integer_type;
+    using floating_point = data::floating_point_type;
+    using string = std::string;
 
-    using node_t = data::node_base<
-        null_t,
-        boolean_t,
-        integer_t,
-        floating_point_t,
-        string_t
+    using node = data::node_base<
+        null,
+        boolean,
+        integer,
+        floating_point,
+        string
     >;
 
-    using array_t = node_t::vec_type;
-    using object_t = node_t::map_type;
+    using array = node::vec_type;
+    using object = node::map_type;
 }
 
 template<>
 struct data::node_traits<
-            json::null_t,
-            json::boolean_t,
-            json::integer_t,
-            json::floating_point_t,
-            json::string_t
+            json::null,
+            json::boolean,
+            json::integer,
+            json::floating_point,
+            json::string
         >
 {
-    static std::ostream &print(std::ostream &stream, const json::node_t &node);
-    static std::istream &parse(std::istream &stream, json::node_t &node);
+    static std::ostream &print(std::ostream &stream, const json::node &node);
+    static std::istream &parse(std::istream &stream, json::node &node);
 };

@@ -10,9 +10,9 @@ json::parser::parser(std::istream &stream)
 {
 }
 
-toolkit::result<json::node_t> json::parser::parse()
+toolkit::result<json::node> json::parser::parse()
 {
-    toolkit::result<node_t> exp;
+    toolkit::result<node> exp;
 
     skip_whitespace();
 
@@ -79,7 +79,7 @@ toolkit::result<json::node_t> json::parser::parse()
     return exp;
 }
 
-toolkit::result<json::node_t> json::parser::parse_number()
+toolkit::result<json::node> json::parser::parse_number()
 {
     std::string buffer;
     auto is_float = false;
@@ -153,7 +153,7 @@ toolkit::result<json::node_t> json::parser::parse_number()
     return { std::stoll(buffer) };
 }
 
-toolkit::result<json::node_t> json::parser::parse_string()
+toolkit::result<json::node> json::parser::parse_string()
 {
     std::u32string value;
 
@@ -221,9 +221,9 @@ toolkit::result<json::node_t> json::parser::parse_string()
     return { toolkit::utf8::encode(std::move(value)) };
 }
 
-toolkit::result<json::node_t> json::parser::parse_array()
+toolkit::result<json::node> json::parser::parse_array()
 {
-    array_t nodes;
+    array nodes;
 
     if (!skip('['))
     {
@@ -255,9 +255,9 @@ toolkit::result<json::node_t> json::parser::parse_array()
     return { std::move(nodes) };
 }
 
-toolkit::result<json::node_t> json::parser::parse_object()
+toolkit::result<json::node> json::parser::parse_object()
 {
-    object_t nodes;
+    object nodes;
 
     if (!skip('{'))
     {
@@ -291,7 +291,7 @@ toolkit::result<json::node_t> json::parser::parse_object()
                 return value;
             }
 
-            nodes[key->get<string_t>()] = std::move(*value);
+            nodes[key->get<string>()] = std::move(*value);
         }
         while (skip(','));
 

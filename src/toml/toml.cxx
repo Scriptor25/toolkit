@@ -3,14 +3,14 @@
 #include <iostream>
 
 std::istream &data::node_traits<
-    toml::boolean_t,
-    toml::integer_t,
-    toml::floating_point_t,
-    toml::string_t,
-    toml::local_date_t,
-    toml::local_time_t,
-    toml::date_time_t
->::parse(std::istream &stream, toml::node_t &node)
+    toml::boolean,
+    toml::integer,
+    toml::floating_point,
+    toml::string,
+    toml::local_date,
+    toml::local_time,
+    toml::date_time
+>::parse(std::istream &stream, toml::node &node)
 {
     toml::parser parser(stream);
     if (auto res = parser.parse())

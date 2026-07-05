@@ -11,11 +11,11 @@ toml::parser::parser(std::istream &stream)
 {
 }
 
-toolkit::result<toml::node_t> toml::parser::parse()
+toolkit::result<toml::node> toml::parser::parse()
 {
-    node_t node;
+    node root;
 
-    auto table = &node;
+    auto table = &root;
 
     while (m_Buffer >= 0)
     {
@@ -48,7 +48,7 @@ toolkit::result<toml::node_t> toml::parser::parse()
             if (is_array && !skip(']'))
                 return toolkit::make_error("expected closing bracket");
 
-            auto table_exp = find_node(node, key);
+            auto table_exp = find_node(root, key);
             if (!table_exp)
                 return toolkit::make_error("{}", table_exp.error());
 
@@ -63,11 +63,11 @@ toolkit::result<toml::node_t> toml::parser::parse()
             if (is_array)
             {
                 if (!*table)
-                    *table = array_t();
+                    *table = array();
 
-                if (table->is<array_t>())
+                if (table->is<array>())
                 {
-                    auto &vec = table->get<array_t>();
+                    auto &vec = table->get<array>();
                     table = &vec.emplace_back();
                 }
                 else
@@ -111,10 +111,10 @@ toolkit::result<toml::node_t> toml::parser::parse()
         *entry = std::move(value);
     }
 
-    return node;
+    return root;
 }
 
-toolkit::result<toml::node_t> toml::parser::parse_value()
+toolkit::result<toml::node> toml::parser::parse_value()
 {
     switch (peek())
     {
@@ -157,7 +157,7 @@ toolkit::result<toml::node_t> toml::parser::parse_value()
     }
 }
 
-toolkit::result<toml::node_t> toml::parser::parse_number()
+toolkit::result<toml::node> toml::parser::parse_number()
 {
     std::string buffer;
     auto has_sign = false, is_float = false;
@@ -174,8 +174,8 @@ toolkit::result<toml::node_t> toml::parser::parse_number()
         if (!skip("inf"))
             return toolkit::make_error("expected 'inf'");
         if (has_sign && buffer.front() == '-')
-            return { -std::numeric_limits<floating_point_t>::infinity() };
-        return { std::numeric_limits<floating_point_t>::infinity() };
+            return { -std::numeric_limits<floating_point>::infinity() };
+        return { std::numeric_limits<floating_point>::infinity() };
     }
 
     if (at('n'))
@@ -183,8 +183,8 @@ toolkit::result<toml::node_t> toml::parser::parse_number()
         if (!skip("nan"))
             return toolkit::make_error("expected 'nan'");
         if (has_sign && buffer.front() == '-')
-            return { -std::numeric_limits<floating_point_t>::quiet_NaN() };
-        return { std::numeric_limits<floating_point_t>::quiet_NaN() };
+            return { -std::numeric_limits<floating_point>::quiet_NaN() };
+        return { std::numeric_limits<floating_point>::quiet_NaN() };
     }
 
     if (skip('0'))
@@ -255,7 +255,7 @@ toolkit::result<toml::node_t> toml::parser::parse_number()
     return { std::stoll(buffer, nullptr, base) };
 }
 
-toolkit::result<toml::node_t> toml::parser::parse_string()
+toolkit::result<toml::node> toml::parser::parse_string()
 {
     std::u32string value;
 
@@ -347,9 +347,9 @@ toolkit::result<toml::node_t> toml::parser::parse_string()
     return { toolkit::utf8::encode(std::move(value)) };
 }
 
-toolkit::result<toml::node_t> toml::parser::parse_array()
+toolkit::result<toml::node> toml::parser::parse_array()
 {
-    array_t nodes;
+    array nodes;
 
     if (!skip('['))
         return toolkit::make_error("expected opening bracket");
@@ -379,9 +379,9 @@ toolkit::result<toml::node_t> toml::parser::parse_array()
     return { std::move(nodes) };
 }
 
-toolkit::result<toml::node_t> toml::parser::parse_table()
+toolkit::result<toml::node> toml::parser::parse_table()
 {
-    table_t nodes;
+    table nodes;
 
     if (!skip('{'))
         return toolkit::make_error("expected opening brace");
@@ -444,7 +444,7 @@ toolkit::result<toml::parser::key_t> toml::parser::parse_key()
 
             auto value = *std::move(value_exp);
 
-            key.push_back(value.get<string_t>());
+            key.push_back(value.get<string>());
             skip_whitespace();
             continue;
         }
@@ -465,15 +465,15 @@ toolkit::result<toml::parser::key_t> toml::parser::parse_key()
     return key;
 }
 
-toolkit::result<toml::node_t *> toml::parser::find_node(node_t &node, const key_t &key)
+toolkit::result<toml::node *> toml::parser::find_node(node &root, const key_t &key)
 {
-    auto ptr = &node;
+    auto ptr = &root;
     for (auto &k : key)
     {
         if (!*ptr)
-            *ptr = table_t();
+            *ptr = table();
 
-        if (ptr->is<table_t>())
+        if (ptr->is<table>())
             ptr = &(*ptr)[k];
         else
             return toolkit::make_error("expected map");
@@ -481,11 +481,11 @@ toolkit::result<toml::node_t *> toml::parser::find_node(node_t &node, const key_
     return ptr;
 }
 
-toolkit::result<toml::node_t *> toml::parser::find_node(table_t &nodes, const key_t &key)
+toolkit::result<toml::node *> toml::parser::find_node(table &root, const key_t &key)
 {
     if (key.size() == 1)
-        return &nodes[key.front()];
-    return find_node(nodes[key.front()], { key.begin() + 1, key.end() });
+        return &root[key.front()];
+    return find_node(root[key.front()], { key.begin() + 1, key.end() });
 }
 
 void toml::parser::get()
