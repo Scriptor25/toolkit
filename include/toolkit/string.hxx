@@ -21,10 +21,10 @@ namespace toolkit
         size_t b{}, e{};
         for (; (e = src.find(delim, b)) != std::basic_string_view<typename S::value_type>::npos; b = e + delim.size())
             if (b != e)
-                dst.push_back(src.substr(b, e - b));
+                dst.emplace_back(src.substr(b, e - b));
 
         if (b != e)
-            dst.push_back(src.substr(b, e - b));
+            dst.emplace_back(src.substr(b, e - b));
     }
 
     template<typename S>
@@ -38,10 +38,10 @@ namespace toolkit
         size_t b{}, e{};
         for (; (e = src.find(delim, b)) != std::basic_string_view<typename S::value_type>::npos; b = e + 1)
             if (b != e)
-                dst.push_back(src.substr(b, e - b));
+                dst.emplace_back(src.substr(b, e - b));
 
         if (b != e)
-            dst.push_back(src.substr(b, e - b));
+            dst.emplace_back(src.substr(b, e - b));
     }
 
     template<typename S>
