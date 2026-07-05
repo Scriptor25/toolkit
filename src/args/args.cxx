@@ -32,7 +32,7 @@ toolkit::result<> args::manifest::insert(entry e)
                 it->second->id,
                 eit->id);
 
-        lookup_[pattern] = eit.base();
+        lookup_[pattern] = &*eit;
     }
 
     return {};
@@ -53,7 +53,7 @@ toolkit::result<> args::manifest::insert(std::span<const entry> e)
                     it->second->id,
                     eit->id);
 
-            lookup_[pattern] = eit.base();
+            lookup_[pattern] = &*eit;
         }
 
     return {};

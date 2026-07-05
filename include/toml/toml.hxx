@@ -8,10 +8,10 @@
 
 namespace toml
 {
-    using undefined_t = data::undefined_t;
+    using undefined_t = data::undefined_type;
     using boolean_t = bool;
-    using integer_t = data::integer_t;
-    using floating_point_t = data::floating_point_t;
+    using integer_t = data::integer_type;
+    using floating_point_t = data::floating_point_type;
     using string_t = std::string;
 
     struct local_date_t
@@ -44,7 +44,7 @@ namespace toml
         std::optional<time_offset_t> offset;
     };
 
-    using node_t = data::node_t<
+    using node_t = data::node_base<
         boolean_t,
         integer_t,
         floating_point_t,
@@ -59,7 +59,7 @@ namespace toml
 }
 
 template<>
-struct data::node_traits_t<
+struct data::node_traits<
             toml::boolean_t,
             toml::integer_t,
             toml::floating_point_t,

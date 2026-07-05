@@ -11,7 +11,7 @@
 namespace data
 {
     template<typename... V>
-    class node_t;
+    class node_base;
 
     template<typename>
     struct is_node : std::false_type
@@ -19,7 +19,7 @@ namespace data
     };
 
     template<typename... V>
-    struct is_node<node_t<V...>> : std::true_type
+    struct is_node<node_base<V...>> : std::true_type
     {
     };
 
@@ -42,15 +42,15 @@ namespace data
     concept floating_point = std::floating_point<std::decay_t<T>> && !primitive<T, N>;
 
     template<typename... V>
-    class node_t
+    class node_base
     {
     public:
-        using traits = node_traits_t<V...>;
+        using traits = node_traits<V...>;
 
-        using vec_type = std::vector<node_t>;
-        using map_type = std::map<std::string, node_t>;
+        using vec_type = std::vector<node_base>;
+        using map_type = std::map<std::string, node_base>;
 
-        using value_type = std::variant<undefined_t, V..., vec_type, map_type>;
+        using value_type = std::variant<undefined_type, V..., vec_type, map_type>;
 
         template<typename T, typename VI, typename MI>
         struct iterator_base
@@ -106,68 +106,68 @@ namespace data
         };
 
         using iterator = iterator_base<
-            node_t,
+            node_base,
             typename vec_type::iterator,
             typename map_type::iterator>;
         using const_iterator = iterator_base<
-            const node_t,
+            const node_base,
             typename vec_type::const_iterator,
             typename map_type::const_iterator>;
 
-        node_t()
+        node_base()
             : m_Value()
         {
         }
 
-        node_t(const node_t &other) = default;
-        node_t &operator=(const node_t &other) = default;
+        node_base(const node_base &other) = default;
+        node_base &operator=(const node_base &other) = default;
 
-        node_t(node_t &&other) noexcept = default;
-        node_t &operator=(node_t &&other) noexcept = default;
+        node_base(node_base &&other) noexcept = default;
+        node_base &operator=(node_base &&other) noexcept = default;
 
-        explicit node_t(const value_type &value)
+        explicit node_base(const value_type &value)
             : m_Value(value)
         {
         }
 
-        node_t &operator=(const value_type &value)
+        node_base &operator=(const value_type &value)
         {
             m_Value = value;
             return *this;
         }
 
-        explicit node_t(value_type &&value)
+        explicit node_base(value_type &&value)
             : m_Value(std::forward<value_type>(value))
         {
         }
 
-        node_t &operator=(value_type &&value)
+        node_base &operator=(value_type &&value)
         {
             m_Value = value;
             return *this;
         }
 
-        template<primitive<node_t> T>
-        node_t(T &&value)
+        template<primitive<node_base> T>
+        node_base(T &&value)
             : m_Value(std::forward<T>(value))
         {
         }
 
-        template<primitive<node_t> T>
-        node_t &operator=(T &&value)
+        template<primitive<node_base> T>
+        node_base &operator=(T &&value)
         {
             m_Value = std::forward<T>(value);
             return *this;
         }
 
-        template<assignable<node_t, value_type> T>
-        node_t(T &&value)
+        template<assignable<node_base, value_type> T>
+        node_base(T &&value)
         {
             to_data_fn(*this, std::forward<T>(value));
         }
 
-        template<assignable<node_t, value_type> T>
-        node_t &operator=(T &&value)
+        template<assignable<node_base, value_type> T>
+        node_base &operator=(T &&value)
         {
             to_data_fn(*this, std::forward<T>(value));
             return *this;
@@ -179,19 +179,19 @@ namespace data
             return from_data_fn(*this, value);
         }
 
-        template<primitive<node_t> T>
+        template<primitive<node_base> T>
         [[nodiscard]] auto is() const
         {
             return std::holds_alternative<T>(m_Value);
         }
 
-        template<primitive<node_t> T>
+        template<primitive<node_base> T>
         auto &&get()
         {
             return std::get<T>(m_Value);
         }
 
-        template<primitive<node_t> T>
+        template<primitive<node_base> T>
         auto &&get() const
         {
             return std::get<T>(m_Value);
@@ -199,7 +199,7 @@ namespace data
 
         bool operator!() const
         {
-            return is<undefined_t>();
+            return is<undefined_type>();
         }
 
         auto &&operator*() &&
@@ -286,7 +286,7 @@ namespace data
 
                     if constexpr (std::same_as<U, vec_type> || std::same_as<U, map_type>)
                         return value.empty();
-                    else if constexpr (std::same_as<U, undefined_t>)
+                    else if constexpr (std::same_as<U, undefined_type>)
                         return true;
                     else
                         throw std::runtime_error("type does not have `empty() const`");
@@ -303,7 +303,7 @@ namespace data
 
                     if constexpr (std::same_as<U, vec_type> || std::same_as<U, map_type>)
                         return value.size();
-                    else if constexpr (std::same_as<U, undefined_t>)
+                    else if constexpr (std::same_as<U, undefined_type>)
                         return 0;
                     else
                         throw std::runtime_error("type does not have `size() const`");
@@ -311,12 +311,12 @@ namespace data
                 m_Value);
         }
 
-        node_t &operator[](size_t index)
+        node_base &operator[](size_t index)
         {
-            static node_t undefined;
+            static node_base undefined;
 
             return std::visit(
-                [&index]<typename T>(T &value) -> node_t &
+                [&index]<typename T>(T &value) -> node_base &
                 {
                     using U = std::decay_t<T>;
 
@@ -326,7 +326,7 @@ namespace data
                             value.resize(index + 1);
                         return value[index];
                     }
-                    else if constexpr (std::same_as<U, undefined_t>)
+                    else if constexpr (std::same_as<U, undefined_type>)
                         return undefined;
                     else
                         throw std::runtime_error("type does not have `operator[](size_t)`");
@@ -334,18 +334,18 @@ namespace data
                 m_Value);
         }
 
-        const node_t &operator[](size_t index) const
+        const node_base &operator[](size_t index) const
         {
-            static const node_t undefined;
+            static const node_base undefined;
 
             return std::visit(
-                [&index]<typename T>(T &value) -> const node_t &
+                [&index]<typename T>(T &value) -> const node_base &
                 {
                     using U = std::decay_t<T>;
 
                     if constexpr (std::same_as<U, vec_type>)
                         return index < value.size() ? value[index] : undefined;
-                    else if constexpr (std::same_as<U, undefined_t>)
+                    else if constexpr (std::same_as<U, undefined_type>)
                         return undefined;
                     else
                         throw std::runtime_error("type does not have `operator[](size_t) const`");
@@ -353,18 +353,18 @@ namespace data
                 m_Value);
         }
 
-        node_t &operator[](const std::string &key)
+        node_base &operator[](const std::string &key)
         {
-            static node_t undefined;
+            static node_base undefined;
 
             return std::visit(
-                [&key]<typename T>(T &value) -> node_t &
+                [&key]<typename T>(T &value) -> node_base &
                 {
                     using U = std::decay_t<T>;
 
                     if constexpr (std::same_as<U, map_type>)
                         return value[key];
-                    else if constexpr (std::same_as<U, undefined_t>)
+                    else if constexpr (std::same_as<U, undefined_type>)
                         return undefined;
                     else
                         throw std::runtime_error("type does not have `operator[](Key)`");
@@ -372,18 +372,18 @@ namespace data
                 m_Value);
         }
 
-        const node_t &operator[](const std::string &key) const
+        const node_base &operator[](const std::string &key) const
         {
-            static const node_t undefined;
+            static const node_base undefined;
 
             return std::visit(
-                [&key]<typename T>(T &value) -> const node_t &
+                [&key]<typename T>(T &value) -> const node_base &
                 {
                     using U = std::decay_t<T>;
 
                     if constexpr (std::same_as<U, map_type>)
                         return value.contains(key) ? value.at(key) : undefined;
-                    else if constexpr (std::same_as<U, undefined_t>)
+                    else if constexpr (std::same_as<U, undefined_type>)
                         return undefined;
                     else
                         throw std::runtime_error("type does not have `operator[](Key) const`");
@@ -396,18 +396,18 @@ namespace data
     };
 
     template<typename... V>
-    std::ostream &operator<<(std::ostream &stream, const node_t<V...> &node)
+    std::ostream &operator<<(std::ostream &stream, const node_base<V...> &node)
     {
-        using N = node_t<V...>;
+        using N = node_base<V...>;
         using T = N::traits;
 
         return T::print(stream, node);
     }
 
     template<typename... V>
-    std::istream &operator>>(std::istream &stream, node_t<V...> &node)
+    std::istream &operator>>(std::istream &stream, node_base<V...> &node)
     {
-        using N = node_t<V...>;
+        using N = node_base<V...>;
         using T = N::traits;
 
         return T::parse(stream, node);
@@ -448,7 +448,7 @@ void to_data(N &node, T &&value)
 template<data::node N, data::floating_point<N> T>
 bool from_data(const N &node, T &value)
 {
-    if (data::floating_point_t val; node >> val)
+    if (data::floating_point_type val; node >> val)
     {
         value = static_cast<T>(val);
         return true;
@@ -460,13 +460,13 @@ bool from_data(const N &node, T &value)
 template<data::node N, data::floating_point<N> T>
 void to_data(N &node, T &&value)
 {
-    node = static_cast<data::floating_point_t>(std::forward<T>(value));
+    node = static_cast<data::floating_point_type>(std::forward<T>(value));
 }
 
 template<data::node N, data::integral<N> T>
 bool from_data(const N &node, T &value)
 {
-    if (data::integer_t val; node >> val)
+    if (data::integer_type val; node >> val)
     {
         value = static_cast<T>(val);
         return true;
@@ -478,7 +478,7 @@ bool from_data(const N &node, T &value)
 template<data::node N, data::integral<N> T>
 void to_data(N &node, T &&value)
 {
-    node = static_cast<data::integer_t>(std::forward<T>(value));
+    node = static_cast<data::integer_type>(std::forward<T>(value));
 }
 
 template<data::node N, typename T>
@@ -652,7 +652,7 @@ void to_data(N &node, T &&value)
         return;
     }
 
-    node = data::undefined_t();
+    node = data::undefined_type();
 }
 
 template<data::node N, typename... T>

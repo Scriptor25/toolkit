@@ -6,14 +6,14 @@
 
 namespace json
 {
-    using undefined_t = data::undefined_t;
+    using undefined_t = data::undefined_type;
     using null_t = std::nullptr_t;
     using boolean_t = bool;
-    using integer_t = data::integer_t;
-    using floating_point_t = data::floating_point_t;
+    using integer_t = data::integer_type;
+    using floating_point_t = data::floating_point_type;
     using string_t = std::string;
 
-    using node_t = data::node_t<
+    using node_t = data::node_base<
         null_t,
         boolean_t,
         integer_t,
@@ -26,7 +26,7 @@ namespace json
 }
 
 template<>
-struct data::node_traits_t<
+struct data::node_traits<
             json::null_t,
             json::boolean_t,
             json::integer_t,

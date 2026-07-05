@@ -2,7 +2,7 @@
 
 #include <iostream>
 
-std::istream &data::node_traits_t<
+std::istream &data::node_traits<
     toml::boolean_t,
     toml::integer_t,
     toml::floating_point_t,

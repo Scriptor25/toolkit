@@ -11,6 +11,15 @@
 
 namespace toolkit
 {
+    template<typename T>
+    concept span = requires(T t)
+    {
+        t.begin();
+        t.end();
+        t.rbegin();
+        t.rend();
+    };
+
     template<typename S, std::convertible_to<std::string_view> D>
     void split(std::vector<std::decay_t<S>> &vec, S &&str, const D &delim)
     {
@@ -77,10 +86,10 @@ namespace toolkit
         return str;
     }
 
-    template<typename S>
-    void trim(S &dst, S &&src)
+    template<span S>
+    void trim(S &dst, const S &src)
     {
-        using I = std::decay_t<S>::iterator;
+        using I = std::decay_t<S>::const_iterator;
 
         I begin, end;
 
@@ -101,10 +110,10 @@ namespace toolkit
         dst = { begin, end };
     }
 
-    template<typename S>
-    S trim(S &&src)
+    template<span S>
+    S trim(const S &src)
     {
-        using I = std::decay_t<S>::iterator;
+        using I = std::decay_t<S>::const_iterator;
 
         I begin, end;
 
@@ -125,7 +134,7 @@ namespace toolkit
         return { begin, end };
     }
 
-    template<typename S>
+    template<span S>
     S lowercase(S str)
     {
         for (auto &c : str)
@@ -133,7 +142,7 @@ namespace toolkit
         return str;
     }
 
-    template<typename S>
+    template<span S>
     S uppercase(S str)
     {
         for (auto &c : str)

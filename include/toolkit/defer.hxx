@@ -6,25 +6,25 @@
 namespace toolkit
 {
     template<typename F, typename... A>
-    class defer_t
+    class deferred
     {
     public:
-        defer_t(F &&f, A &&... a)
+        deferred(F &&f, A &&... a)
             : f(std::forward<F>(f)),
               a(std::forward<A>(a)...)
         {
         }
 
-        defer_t(const defer_t &) = delete;
-        defer_t &operator=(const defer_t &) = delete;
+        deferred(const deferred &) = delete;
+        deferred &operator=(const deferred &) = delete;
 
-        defer_t(defer_t &&other) noexcept
+        deferred(deferred &&other) noexcept
             : f(std::move(other.f)),
               a(std::move(other.a))
         {
         }
 
-        defer_t &operator=(defer_t &&other) noexcept
+        deferred &operator=(deferred &&other) noexcept
         {
             std::swap(f, other.f);
             std::swap(a, other.a);
@@ -32,7 +32,7 @@ namespace toolkit
             return *this;
         }
 
-        ~defer_t()
+        ~deferred()
         {
             if (active)
                 std::apply(f, a);
@@ -51,7 +51,7 @@ namespace toolkit
     };
 
     template<typename F, typename... A>
-    defer_t<F, A...> defer(F &&f, A &&... a)
+    deferred<F, A...> defer(F &&f, A &&... a)
     {
         return { std::forward<F>(f), std::forward<A>(a)... };
     }

@@ -264,7 +264,7 @@ static std::ostream &print_fn(std::ostream &stream, const unsigned indent, const
     return stream;
 }
 
-std::ostream &data::node_traits_t<
+std::ostream &data::node_traits<
     json::null_t,
     json::boolean_t,
     json::integer_t,
@@ -279,7 +279,7 @@ std::ostream &data::node_traits_t<
     return print_fn(stream, indent, *node);
 }
 
-std::istream &data::node_traits_t<
+std::istream &data::node_traits<
     json::null_t,
     json::boolean_t,
     json::integer_t,
