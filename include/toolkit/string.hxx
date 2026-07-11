@@ -179,7 +179,7 @@ namespace toolkit
     }
 
     template<std::floating_point T>
-    [[nodiscard]] result<T> ParseString(const std::string &str, std::chars_format fmt = std::chars_format::general)
+    [[nodiscard]] result<T> parse_string(const std::string &str, std::chars_format fmt = std::chars_format::general)
     {
         T value;
         auto [_, ec] = std::from_chars(str.data(), str.data() + str.size(), value, fmt);
