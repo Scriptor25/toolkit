@@ -1,6 +1,7 @@
 #include <data/json_toml.hxx>
 #include <json/json.hxx>
 #include <toml/toml.hxx>
+#include <toolkit/result.hxx>
 
 struct test_t
 {
@@ -37,4 +38,8 @@ int main()
 
     test_t value;
     toml_node >> value;
+
+    toolkit::result<test_t> x;
+    toml::integer y;
+    x.extract(&test_t::foo) >> y;
 }

@@ -25,6 +25,9 @@ namespace toolkit
         static constexpr auto is_result = false;
     };
 
+    template<typename T, typename M>
+    concept member_of = requires(M T::*m) { m; };
+
     template<typename V, typename E>
     struct result_traits<result<V, E>>
     {
@@ -409,6 +412,16 @@ namespace toolkit
         [[nodiscard]] auto &&error() &&
         {
             return std::get<error_type>(std::move(container)).message;
+        }
+
+        template<typename O, typename M>
+            requires std::same_as<T, O>
+        auto extract(M O::*m)
+        {
+            if (auto *ptr = std::get_if<O>(&container))
+                return result<M, E>{ ptr->*m };
+
+            return result<M, E>{ std::get<error_type>(container) };
         }
 
         template<typename F>
