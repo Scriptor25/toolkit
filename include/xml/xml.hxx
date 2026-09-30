@@ -39,7 +39,7 @@ namespace data
         {
             if (xml::string val; node >> val)
             {
-                const auto result = std::from_chars(&val.front(), &val.back(), value);
+                const auto result = std::from_chars(val.data(), val.data() + val.size(), value);
                 return result.ec == std::errc{};
             }
 
@@ -59,7 +59,7 @@ namespace data
         {
             if (xml::string val; node >> val)
             {
-                const auto result = std::from_chars(val.begin().base(), val.end().base(), value);
+                const auto result = std::from_chars(val.data(), val.data() + val.size(), value);
                 return result.ec == std::errc{};
             }
 
