@@ -63,15 +63,26 @@ target_include_directories(toolkit_toml PUBLIC
 )
 target_link_libraries(toolkit_toml PUBLIC toolkit_core)
 
+### XML ###
+
+file(GLOB_RECURSE XML_SOURCES src/xml/*.cxx)
+add_library(toolkit_xml ${XML_SOURCES})
+add_library(toolkit::xml ALIAS toolkit_xml)
+target_include_directories(toolkit_xml PUBLIC
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+        $<INSTALL_INTERFACE:${CMAKE_INSTALL_PREFIX}/include>
+)
+target_link_libraries(toolkit_xml PUBLIC toolkit_core)
+
 ### TEST ###
 
 add_executable(test src/test.cxx)
-target_link_libraries(test PRIVATE toolkit_core toolkit_args toolkit_http toolkit_json toolkit_toml)
+target_link_libraries(test PRIVATE toolkit_core toolkit_args toolkit_http toolkit_json toolkit_toml toolkit_xml)
 
 ### INSTALL ###
 
 if (TOOLKIT_ENABLE_INSTALL)
-    install(TARGETS toolkit_core toolkit_json toolkit_toml
+    install(TARGETS toolkit_core toolkit_args toolkit_http toolkit_json toolkit_toml toolkit_xml
             EXPORT toolkit_targets
             ARCHIVE DESTINATION "${CMAKE_INSTALL_PREFIX}/lib"
             LIBRARY DESTINATION "${CMAKE_INSTALL_PREFIX}/lib"

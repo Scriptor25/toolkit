@@ -1,7 +1,11 @@
 #include <data/json_toml.hxx>
 #include <json/json.hxx>
 #include <toml/toml.hxx>
+#include <xml/xml.hxx>
+
 #include <toolkit/result.hxx>
+
+#include <sstream>
 
 struct test_t
 {
@@ -10,7 +14,7 @@ struct test_t
 };
 
 template<>
-struct data::serializer<test_t>
+struct data::serializer<toml::node, test_t>
 {
     static bool from_data(const toml::node &node, test_t &value)
     {
@@ -26,8 +30,49 @@ struct data::serializer<test_t>
     }
 };
 
+template<>
+struct data::serializer<xml::node, test_t>
+{
+    static bool from_data(const xml::node &node, test_t &value)
+    {
+        if (!node.is<xml::element>())
+            return false;
+
+        const auto &tag = node["tag"];
+        const auto &attributes = node["attributes"];
+
+        if (!tag || !attributes)
+            return false;
+
+        if (!tag.is<xml::string>())
+            return false;
+
+        if (!attributes.is<xml::element>())
+            return false;
+
+        if (std::string tag_str; tag >> tag_str, tag_str != "test")
+            return false;
+
+        auto ok = true;
+
+        ok &= attributes["foo"] >> value.foo;
+        ok &= attributes["bar"] >> value.bar;
+
+        return ok;
+    }
+};
+
 int main()
 {
+    const auto *xml = R"(<test foo="123" bar />)";
+    std::istringstream xml_stream(xml);
+
+    xml::node xml_node;
+    xml_stream >> xml_node;
+
+    test_t xml_value;
+    xml_node >> xml_value;
+
     json::node json_node = json::object
     {
         { "foo", 123 },

@@ -118,7 +118,7 @@ static std::ostream &print_fn(std::ostream &stream, const unsigned indent, const
                 if (value.size() > 1)
                 {
                     stream << '\n';
-                    depth++;
+                    ++depth;
                 }
 
                 auto first = true;
@@ -148,7 +148,7 @@ static std::ostream &print_fn(std::ostream &stream, const unsigned indent, const
 
                 if (value.size() > 1)
                 {
-                    depth--;
+                    --depth;
                     indent_depth(stream << '\n', indent);
                 }
 
@@ -195,7 +195,7 @@ static std::ostream &print_fn(std::ostream &stream, const unsigned indent, const
                     stream << '\n';
                 }
 
-                depth++;
+                ++depth;
 
                 auto first = true;
                 for (const auto &[key_, val_] : value)
@@ -218,7 +218,7 @@ static std::ostream &print_fn(std::ostream &stream, const unsigned indent, const
                     print_fn(stream, indent, *val_);
                 }
 
-                depth--;
+                --depth;
 
                 if (!value.empty())
                 {
@@ -258,7 +258,11 @@ static std::ostream &print_fn(std::ostream &stream, const unsigned indent, const
 
         std::ostream &stream;
         std::size_t indent;
-    } visitor{ stream, indent };
+    } visitor
+    {
+        .stream = stream,
+        .indent = indent,
+    };
 
     std::visit(visitor, value);
     return stream;

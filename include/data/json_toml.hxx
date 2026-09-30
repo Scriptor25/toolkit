@@ -6,7 +6,7 @@
 #include <toml/toml.hxx>
 
 template<>
-struct data::serializer<toml::local_date>
+struct data::serializer<json::node, toml::local_date>
 {
     static bool from_data(const json::node &node, toml::local_date &value)
     {
@@ -35,7 +35,7 @@ struct data::serializer<toml::local_date>
 };
 
 template<>
-struct data::serializer<toml::local_time>
+struct data::serializer<json::node, toml::local_time>
 {
     static bool from_data(const json::node &node, toml::local_time &value)
     {
@@ -66,7 +66,7 @@ struct data::serializer<toml::local_time>
 };
 
 template<>
-struct data::serializer<toml::date_time::time_offset>
+struct data::serializer<json::node, toml::date_time::time_offset>
 {
     static bool from_data(const json::node &node, toml::date_time::time_offset &value)
     {
@@ -93,7 +93,7 @@ struct data::serializer<toml::date_time::time_offset>
 };
 
 template<>
-struct data::serializer<toml::date_time>
+struct data::serializer<json::node, toml::date_time>
 {
     static bool from_data(const json::node &node, toml::date_time &value)
     {
@@ -122,7 +122,7 @@ struct data::serializer<toml::date_time>
 };
 
 template<>
-struct data::serializer<toml::node>
+struct data::serializer<json::node, toml::node>
 {
     static bool from_data(const json::node &node, toml::node &value)
     {
@@ -137,7 +137,7 @@ struct data::serializer<toml::node>
 };
 
 template<>
-struct data::serializer<json::null>
+struct data::serializer<toml::node, json::null>
 {
     static bool from_data(const toml::node &node, json::null &value)
     {
@@ -157,7 +157,7 @@ struct data::serializer<json::null>
 };
 
 template<>
-struct data::serializer<json::node>
+struct data::serializer<toml::node, json::node>
 {
     static bool from_data(const toml::node &node, json::node &value)
     {

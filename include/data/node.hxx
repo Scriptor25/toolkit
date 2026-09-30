@@ -27,7 +27,7 @@ namespace data
     concept node_type = is_node<std::decay_t<T>>::value;
 
     template<typename T, typename N>
-    concept node_value_of = std::same_as<std::decay_t<T>, typename N::value_type>;
+    concept node_value_of = toolkit::same_as<T, typename N::value_type>;
 
     template<typename T, typename N>
     concept primitive = toolkit::in_variant<std::decay_t<T>, typename N::value_type>;
@@ -197,6 +197,11 @@ namespace data
             return std::get<T>(m_Value);
         }
 
+        explicit operator bool() const
+        {
+            return !is<undefined_type>();
+        }
+
         bool operator!() const
         {
             return is<undefined_type>();
@@ -222,9 +227,7 @@ namespace data
             return std::visit(
                 []<typename T>(T &value) -> iterator
                 {
-                    using U = std::decay_t<T>;
-
-                    if constexpr (std::same_as<U, vec_type> || std::same_as<U, map_type>)
+                    if constexpr (toolkit::same_as<T, vec_type> || toolkit::same_as<T, map_type>)
                         return iterator(value.begin());
                     else
                         throw std::runtime_error("type does not have `begin()`");
@@ -237,9 +240,7 @@ namespace data
             return std::visit(
                 []<typename T>(T &value) -> iterator
                 {
-                    using U = std::decay_t<T>;
-
-                    if constexpr (std::same_as<U, vec_type> || std::same_as<U, map_type>)
+                    if constexpr (toolkit::same_as<T, vec_type> || toolkit::same_as<T, map_type>)
                         return iterator(value.end());
                     else
                         throw std::runtime_error("type does not have `end()`");
@@ -252,9 +253,7 @@ namespace data
             return std::visit(
                 []<typename T>(T &value) -> const_iterator
                 {
-                    using U = std::decay_t<T>;
-
-                    if constexpr (std::same_as<U, vec_type> || std::same_as<U, map_type>)
+                    if constexpr (toolkit::same_as<T, vec_type> || toolkit::same_as<T, map_type>)
                         return const_iterator(value.begin());
                     else
                         throw std::runtime_error("type does not have `begin() const`");
@@ -267,9 +266,7 @@ namespace data
             return std::visit(
                 []<typename T>(T &value) -> const_iterator
                 {
-                    using U = std::decay_t<T>;
-
-                    if constexpr (std::same_as<U, vec_type> || std::same_as<U, map_type>)
+                    if constexpr (toolkit::same_as<T, vec_type> || toolkit::same_as<T, map_type>)
                         return const_iterator(value.end());
                     else
                         throw std::runtime_error("type does not have `end() const`");
@@ -282,11 +279,9 @@ namespace data
             return std::visit(
                 []<typename T>(T &value) -> size_t
                 {
-                    using U = std::decay_t<T>;
-
-                    if constexpr (std::same_as<U, vec_type> || std::same_as<U, map_type>)
+                    if constexpr (toolkit::same_as<T, vec_type> || toolkit::same_as<T, map_type>)
                         return value.empty();
-                    else if constexpr (std::same_as<U, undefined_type>)
+                    else if constexpr (toolkit::same_as<T, undefined_type>)
                         return true;
                     else
                         throw std::runtime_error("type does not have `empty() const`");
@@ -299,11 +294,9 @@ namespace data
             return std::visit(
                 []<typename T>(T &value) -> size_t
                 {
-                    using U = std::decay_t<T>;
-
-                    if constexpr (std::same_as<U, vec_type> || std::same_as<U, map_type>)
+                    if constexpr (toolkit::same_as<T, vec_type> || toolkit::same_as<T, map_type>)
                         return value.size();
-                    else if constexpr (std::same_as<U, undefined_type>)
+                    else if constexpr (toolkit::same_as<T, undefined_type>)
                         return 0;
                     else
                         throw std::runtime_error("type does not have `size() const`");
@@ -318,15 +311,13 @@ namespace data
             return std::visit(
                 [&index]<typename T>(T &value) -> node_base &
                 {
-                    using U = std::decay_t<T>;
-
-                    if constexpr (std::same_as<U, vec_type>)
+                    if constexpr (toolkit::same_as<T, vec_type>)
                     {
                         if (index >= value.size())
                             value.resize(index + 1);
                         return value[index];
                     }
-                    else if constexpr (std::same_as<U, undefined_type>)
+                    else if constexpr (toolkit::same_as<T, undefined_type>)
                         return undefined;
                     else
                         throw std::runtime_error("type does not have `operator[](size_t)`");
@@ -341,11 +332,9 @@ namespace data
             return std::visit(
                 [&index]<typename T>(T &value) -> const node_base &
                 {
-                    using U = std::decay_t<T>;
-
-                    if constexpr (std::same_as<U, vec_type>)
+                    if constexpr (toolkit::same_as<T, vec_type>)
                         return index < value.size() ? value[index] : undefined;
-                    else if constexpr (std::same_as<U, undefined_type>)
+                    else if constexpr (toolkit::same_as<T, undefined_type>)
                         return undefined;
                     else
                         throw std::runtime_error("type does not have `operator[](size_t) const`");
@@ -360,11 +349,9 @@ namespace data
             return std::visit(
                 [&key]<typename T>(T &value) -> node_base &
                 {
-                    using U = std::decay_t<T>;
-
-                    if constexpr (std::same_as<U, map_type>)
+                    if constexpr (toolkit::same_as<T, map_type>)
                         return value[key];
-                    else if constexpr (std::same_as<U, undefined_type>)
+                    else if constexpr (toolkit::same_as<T, undefined_type>)
                         return undefined;
                     else
                         throw std::runtime_error("type does not have `operator[](Key)`");
@@ -379,11 +366,9 @@ namespace data
             return std::visit(
                 [&key]<typename T>(T &value) -> const node_base &
                 {
-                    using U = std::decay_t<T>;
-
-                    if constexpr (std::same_as<U, map_type>)
+                    if constexpr (toolkit::same_as<T, map_type>)
                         return value.contains(key) ? value.at(key) : undefined;
-                    else if constexpr (std::same_as<U, undefined_type>)
+                    else if constexpr (toolkit::same_as<T, undefined_type>)
                         return undefined;
                     else
                         throw std::runtime_error("type does not have `operator[](Key) const`");
@@ -412,274 +397,307 @@ namespace data
 
         return T::parse(stream, node);
     }
-}
 
-template<data::node_type N>
-bool from_data(const N &node, N &value)
-{
-    value = node;
-    return true;
-}
-
-template<data::node_type N, toolkit::same_as<N> T>
-void to_data(N &node, T &&value)
-{
-    node = std::forward<T>(value);
-}
-
-template<data::node_type N, data::primitive<N> T>
-bool from_data(const N &node, T &value)
-{
-    if (node.template is<T>())
+    template<node_type N>
+    struct serializer<N, N>
     {
-        value = node.template get<T>();
-        return true;
-    }
-
-    return false;
-}
-
-template<data::node_type N, data::primitive<N> T>
-void to_data(N &node, T &&value)
-{
-    node = N(std::forward<T>(value));
-}
-
-template<data::node_type N, data::floating_point<N> T>
-bool from_data(const N &node, T &value)
-{
-    if (data::floating_point_type val; node >> val)
-    {
-        value = static_cast<T>(val);
-        return true;
-    }
-
-    return false;
-}
-
-template<data::node_type N, data::floating_point<N> T>
-void to_data(N &node, T &&value)
-{
-    node = static_cast<data::floating_point_type>(std::forward<T>(value));
-}
-
-template<data::node_type N, data::integral<N> T>
-bool from_data(const N &node, T &value)
-{
-    if (data::integer_type val; node >> val)
-    {
-        value = static_cast<T>(val);
-        return true;
-    }
-
-    return false;
-}
-
-template<data::node_type N, data::integral<N> T>
-void to_data(N &node, T &&value)
-{
-    node = static_cast<data::integer_type>(std::forward<T>(value));
-}
-
-template<data::node_type N, typename T>
-bool from_data(const N &node, std::vector<T> &value)
-{
-    using vec_type = N::vec_type;
-
-    if (!node.template is<vec_type>())
-        return false;
-
-    value.resize(node.size());
-
-    auto ok = true;
-    for (std::size_t i = 0; i < node.size(); ++i)
-        ok &= node[i] >> value[i];
-
-    return ok;
-}
-
-template<data::node_type N, toolkit::vector_type T>
-void to_data(N &node, T &&value)
-{
-    using vec_type = N::vec_type;
-
-    node = vec_type(value.size());
-
-    for (std::size_t i = 0; i < value.size(); ++i)
-        node[i] = value[i];
-}
-
-template<data::node_type N, typename T, std::size_t S>
-bool from_data(const N &node, std::array<T, S> &value)
-{
-    using vec_type = N::vec_type;
-
-    if (!node.template is<vec_type>() || node.size() != S)
-        return false;
-
-    value.resize(S);
-
-    auto ok = true;
-    for (std::size_t i = 0; i < S; ++i)
-        ok &= node[i] >> value[i];
-
-    return ok;
-}
-
-template<data::node_type N, toolkit::array_type T>
-void to_data(N &node, T &&value)
-{
-    using vec_type = N::vec_type;
-
-    node = vec_type(value.size());
-
-    for (std::size_t i = 0; i < value.size(); ++i)
-        node[i] = value[i];
-}
-
-template<data::node_type N, typename T>
-bool from_data(const N &node, std::set<T> &value)
-{
-    if (std::vector<T> val; node >> val)
-    {
-        value = { std::make_move_iterator(val.begin()), std::make_move_iterator(val.end()) };
-        return true;
-    }
-
-    return false;
-}
-
-template<data::node_type N, toolkit::set_type T>
-void to_data(N &node, T &&value)
-{
-    node = std::vector(value.begin(), value.end());
-}
-
-template<data::node_type N, typename T>
-bool from_data(const N &node, std::unordered_set<T> &value)
-{
-    if (std::vector<T> val; node >> val)
-    {
-        value = { std::make_move_iterator(val.begin()), std::make_move_iterator(val.end()) };
-        return true;
-    }
-
-    return false;
-}
-
-template<data::node_type N, toolkit::unordered_set_type T>
-void to_data(N &node, T &&value)
-{
-    node = std::vector(value.begin(), value.end());
-}
-
-template<data::node_type N, typename T>
-bool from_data(const N &node, std::map<std::string, T> &value)
-{
-    using map_type = N::map_type;
-
-    if (!node.template is<map_type>())
-        return false;
-
-    auto ok = true;
-    for (auto &&[key, val] : node)
-        ok &= val >> value[key];
-
-    return ok;
-}
-
-template<data::node_type N, toolkit::map_type T>
-void to_data(N &node, T &&value)
-{
-    using map_type = N::map_type;
-
-    node = map_type();
-
-    for (auto &&[key, val] : value)
-        node[key] = val;
-}
-
-template<data::node_type N, typename T>
-bool from_data(const N &node, std::unordered_map<std::string, T> &value)
-{
-    using map_type = N::map_type;
-
-    if (!node.template is<map_type>())
-        return false;
-
-    auto ok = true;
-    for (auto &&[key, val] : node)
-        ok &= val >> value[key];
-
-    return ok;
-}
-
-template<data::node_type N, toolkit::unordered_map_type T>
-void to_data(N &node, T &&value)
-{
-    using map_type = N::map_type;
-
-    node = map_type();
-
-    for (auto &&[key, val] : value)
-        node[key] = val;
-}
-
-template<data::node_type N, typename T>
-bool from_data(const N &node, std::optional<T> &value)
-{
-    if (!node)
-    {
-        value = std::nullopt;
-        return true;
-    }
-
-    if (T val; node >> val)
-    {
-        value = std::move(val);
-        return true;
-    }
-
-    return false;
-}
-
-template<data::node_type N, toolkit::optional_type T>
-void to_data(N &node, T &&value)
-{
-    if (value.has_value())
-    {
-        node = value.value();
-        return;
-    }
-
-    node = data::undefined_type();
-}
-
-template<data::node_type N, typename... T>
-bool from_data(const N &node, std::variant<T...> &value)
-{
-    auto try_from_json = [&]<typename U>() -> bool
-    {
-        if (U val; node >> val)
+        static bool from_data(const N &node, N &value)
         {
-            value = std::move(val);
+            value = node;
             return true;
         }
-        return false;
+
+        template<toolkit::same_as<N> U>
+        static void to_data(N &node, U &&value)
+        {
+            node = std::forward<U>(value);
+        }
     };
 
-    return (try_from_json.template operator()<T>() || ...);
-}
-
-template<data::node_type N, toolkit::variant_type T>
-void to_data(N &node, T &&value)
-{
-    std::visit(
-        [&node]<typename V>(V &&val)
+    template<node_type N, primitive<N> T>
+    struct serializer<N, T>
+    {
+        static bool from_data(const N &node, T &value)
         {
-            node = std::forward<V>(val);
-        },
-        std::forward<T>(value));
+            if (node.template is<T>())
+            {
+                value = node.template get<T>();
+                return true;
+            }
+
+            return false;
+        }
+
+        static void to_data(N &node, T &&value)
+        {
+            node = N(std::forward<T>(value));
+        }
+    };
+
+    template<node_type N, floating_point<N> T>
+    struct serializer<N, T>
+    {
+        static bool from_data(const N &node, T &value)
+        {
+            if (floating_point_type val; node >> val)
+            {
+                value = static_cast<T>(val);
+                return true;
+            }
+
+            return false;
+        }
+
+        static void to_data(N &node, T &&value)
+        {
+            node = static_cast<floating_point_type>(std::forward<T>(value));
+        }
+    };
+
+    template<node_type N, integral<N> T>
+    struct serializer<N, T>
+    {
+        static bool from_data(const N &node, T &value)
+        {
+            if (integer_type val; node >> val)
+            {
+                value = static_cast<T>(val);
+                return true;
+            }
+
+            return false;
+        }
+
+        static void to_data(N &node, T &&value)
+        {
+            node = static_cast<integer_type>(std::forward<T>(value));
+        }
+    };
+
+    template<node_type N, typename T>
+    struct serializer<N, std::vector<T>>
+    {
+        static bool from_data(const N &node, std::vector<T> &value)
+        {
+            using vec_type = N::vec_type;
+
+            if (!node.template is<vec_type>())
+                return false;
+
+            value.resize(node.size());
+
+            auto ok = true;
+            for (std::size_t i = 0; i < node.size(); ++i)
+                ok &= node[i] >> value[i];
+
+            return ok;
+        }
+
+        template<toolkit::same_as<std::vector<T>> U>
+        static void to_data(N &node, U &&value)
+        {
+            using vec_type = N::vec_type;
+
+            node = vec_type(value.size());
+
+            for (std::size_t i = 0; i < value.size(); ++i)
+                node[i] = value[i];
+        }
+    };
+
+    template<node_type N, typename T, std::size_t S>
+    struct serializer<N, std::array<T, S>>
+    {
+        static bool from_data(const N &node, std::array<T, S> &value)
+        {
+            using vec_type = N::vec_type;
+
+            if (!node.template is<vec_type>() || node.size() != S)
+                return false;
+
+            auto ok = true;
+            for (std::size_t i = 0; i < S; ++i)
+                ok &= node[i] >> value[i];
+
+            return ok;
+        }
+
+        template<toolkit::same_as<std::array<T, S>> U>
+        static void to_data(N &node, U &&value)
+        {
+            using vec_type = N::vec_type;
+
+            node = vec_type(S);
+
+            for (std::size_t i = 0; i < S; ++i)
+                node[i] = value[i];
+        }
+    };
+
+    template<node_type N, typename T>
+    struct serializer<N, std::set<T>>
+    {
+        static bool from_data(const N &node, std::set<T> &value)
+        {
+            if (std::vector<T> val; node >> val)
+            {
+                value = { std::make_move_iterator(val.begin()), std::make_move_iterator(val.end()) };
+                return true;
+            }
+
+            return false;
+        }
+
+        template<toolkit::same_as<std::set<T>> U>
+        static void to_data(N &node, U &&value)
+        {
+            node = std::vector(value.begin(), value.end());
+        }
+    };
+
+    template<node_type N, typename T>
+    struct serializer<N, std::unordered_set<T>>
+    {
+        static bool from_data(const N &node, std::unordered_set<T> &value)
+        {
+            using value_type = T::value_type;
+
+            if (std::vector<value_type> val; node >> val)
+            {
+                value = { std::make_move_iterator(val.begin()), std::make_move_iterator(val.end()) };
+                return true;
+            }
+
+            return false;
+        }
+
+        template<toolkit::same_as<std::unordered_set<T>> U>
+        static void to_data(N &node, U &&value)
+        {
+            node = std::vector(value.begin(), value.end());
+        }
+    };
+
+    template<node_type N, typename T>
+    struct serializer<N, std::map<std::string, T>>
+    {
+        static bool from_data(const N &node, std::map<std::string, T> &value)
+        {
+            using map_type = N::map_type;
+
+            if (!node.template is<map_type>())
+                return false;
+
+            auto ok = true;
+            for (auto &&[key, val] : node)
+                ok &= val >> value[key];
+
+            return ok;
+        }
+
+        template<toolkit::same_as<std::map<std::string, T>> U>
+        static void to_data(N &node, U &&value)
+        {
+            using map_type = N::map_type;
+
+            node = map_type();
+
+            for (auto &&[key, val] : value)
+                node[key] = val;
+        }
+    };
+
+    template<node_type N, typename T>
+    struct serializer<N, std::unordered_map<std::string, T>>
+    {
+        static bool from_data(const N &node, std::unordered_map<std::string, T> &value)
+        {
+            using map_type = N::map_type;
+
+            if (!node.template is<map_type>())
+                return false;
+
+            auto ok = true;
+            for (auto &&[key, val] : node)
+                ok &= val >> value[key];
+
+            return ok;
+        }
+
+        template<toolkit::same_as<std::unordered_map<std::string, T>> U>
+        static void to_data(N &node, U &&value)
+        {
+            using map_type = N::map_type;
+
+            node = map_type();
+
+            for (auto &&[key, val] : value)
+                node[key] = val;
+        }
+    };
+
+    template<node_type N, typename T>
+    struct serializer<N, std::optional<T>>
+    {
+        static bool from_data(const N &node, std::optional<T> &value)
+        {
+            if (!node)
+            {
+                value = std::nullopt;
+                return true;
+            }
+
+            if (T val; node >> val)
+            {
+                value = std::move(val);
+                return true;
+            }
+
+            return false;
+        }
+
+        template<toolkit::same_as<std::optional<T>> U>
+        static void to_data(N &node, U &&value)
+        {
+            if (value.has_value())
+            {
+                node = value.value();
+                return;
+            }
+
+            node = undefined_type();
+        }
+    };
+
+    template<node_type N, typename... T>
+    struct serializer<N, std::variant<T...>>
+    {
+        static bool from_data(const N &node, std::variant<T...> &value)
+        {
+            auto try_from_json = [&]<typename U>() -> bool
+            {
+                if (U val; node >> val)
+                {
+                    value = std::move(val);
+                    return true;
+                }
+                return false;
+            };
+
+            return (try_from_json.template operator()<T>() || ...);
+        }
+
+        template<toolkit::same_as<std::variant<T...>> U>
+        static void to_data(N &node, U &&value)
+        {
+            std::visit(
+                [&node]<typename V>(V &&val)
+                {
+                    node = std::forward<V>(val);
+                },
+                std::forward<U>(value));
+        }
+    };
 }
 
 template<data::node_type N, typename T>
@@ -697,31 +715,11 @@ bool from_data_opt(const N &node, T &value, T default_value = {})
 template<typename N, typename T>
 bool data::from_data_fn(const N &node, T &value)
 {
-    using U = std::decay_t<T>;
-
-    if constexpr (enable_from_data<N, U>)
-    {
-        return serializer<U>::from_data(node, value);
-    }
-    else
-    {
-        using ::from_data;
-        return from_data(node, value);
-    }
+    return serializer<N, T>::from_data(node, value);
 }
 
 template<typename N, typename T>
 void data::to_data_fn(N &node, T &&value)
 {
-    using U = std::decay_t<T>;
-
-    if constexpr (enable_to_data<N, U>)
-    {
-        return serializer<U>::to_data(node, std::forward<T>(value));
-    }
-    else
-    {
-        using ::to_data;
-        return to_data(node, std::forward<T>(value));
-    }
+    return serializer<N, std::decay_t<T>>::to_data(node, std::forward<T>(value));
 }
