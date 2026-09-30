@@ -40,7 +40,6 @@ toolkit::result<> http::client::fetch(request_t request, response_t &response) c
     set_header_if_missing(request.headers, "Host", request.location.host);
     set_header_if_missing(request.headers, "Connection", "close");
     set_header_if_missing(request.headers, "Accept-Encoding", "identity");
-    set_header_if_missing(request.headers, "User-Agent", "unvm/0.1");
 
     std::stringstream packet;
     packet << request.method << ' ' << request.location.pathname << ' ' << "HTTP/1.1" << EOL;

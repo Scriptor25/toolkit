@@ -1,18 +1,67 @@
 #include <http/client.hxx>
 
+#ifdef _WIN32
+
+#include <winsock2.h>
+#include <ws2tcpip.h>
+
+static int socket_close(const int fd)
+{
+    return closesocket(fd);
+}
+
+#endif
+
+#if defined(__linux__) || defined(__APPLE__)
+
 #include <netdb.h>
 #include <unistd.h>
 #include <sys/socket.h>
 
+static int socket_close(const int fd)
+{
+    return close(fd);
+}
+
+#endif
+
 namespace
 {
-    int socket_close(const int fd)
-    {
-        return close(fd);
-    }
-
     struct default_transport : http::transport
     {
+        default_transport()
+        {
+#ifdef _WIN32
+            WSAStartup(MAKEWORD(2, 2), &wsa);
+#endif
+        }
+
+        ~default_transport() override
+        {
+#ifdef _WIN32
+            WSACleanup();
+#endif
+        }
+
+        default_transport(const default_transport &) = delete;
+        default_transport &operator=(const default_transport &) = delete;
+
+        default_transport(default_transport &&other) noexcept
+        {
+#ifdef _WIN32
+            std::swap(wsa, other.wsa)
+#endif
+        }
+
+        default_transport &operator=(default_transport &&other) noexcept
+        {
+#ifdef _WIN32
+            std::swap(wsa, other.wsa)
+#endif
+
+            return *this;
+        }
+
         toolkit::result<int> open(const http::url &location) override
         {
             if (location.scheme != "http" && location.scheme != "https")
@@ -75,6 +124,10 @@ namespace
         {
             return ::recv(fd, buffer, count, 0);
         }
+
+#ifdef _WIN32
+        WSADATA wsa{};
+#endif
     };
 }
 
