@@ -4,6 +4,7 @@
 
 #include <toolkit/result.hxx>
 
+#include <memory>
 #include <span>
 
 namespace http
@@ -15,9 +16,12 @@ namespace http
         virtual toolkit::result<int> open(const url &location) = 0;
         virtual void close(int fd) = 0;
 
-        virtual int send(int fd, const void *buffer, size_t count, int flags) = 0;
-        virtual int recv(int fd, void *buffer, size_t count, int flags) = 0;
+        virtual int send(int fd, const void *buffer, size_t count) = 0;
+        virtual int recv(int fd, void *buffer, size_t count) = 0;
     };
+
+    std::unique_ptr<transport> create_default_tcp_transport();
+    std::unique_ptr<transport> create_default_secure_tcp_transport();
 
     class client
     {

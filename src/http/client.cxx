@@ -151,12 +151,12 @@ toolkit::result<> http::client::fetch_with_redirects(request_t request, response
 
 int http::client::read(const int fd, const std::span<char> buffer) const
 {
-    return transport_.recv(fd, buffer.data(), buffer.size(), 0);
+    return transport_.recv(fd, buffer.data(), buffer.size());
 }
 
 int http::client::write(const int fd, const std::span<const char> buffer) const
 {
-    return transport_.send(fd, buffer.data(), buffer.size(), 0);
+    return transport_.send(fd, buffer.data(), buffer.size());
 }
 
 toolkit::result<> http::client::read_until(const int fd, std::string &dst, const char *delimiter) const
