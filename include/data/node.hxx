@@ -560,9 +560,7 @@ namespace data
     {
         static bool from_data(const N &node, std::unordered_set<T> &value)
         {
-            using value_type = T::value_type;
-
-            if (std::vector<value_type> val; node >> val)
+            if (std::vector<T> val; node >> val)
             {
                 value = { std::make_move_iterator(val.begin()), std::make_move_iterator(val.end()) };
                 return true;
