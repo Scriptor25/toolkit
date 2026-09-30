@@ -428,9 +428,10 @@ namespace data
             return false;
         }
 
-        static void to_data(N &node, T &&value)
+        template<toolkit::same_as<T> U>
+        static void to_data(N &node, U &&value)
         {
-            node = N(std::forward<T>(value));
+            node = N(std::forward<U>(value));
         }
     };
 
@@ -448,9 +449,10 @@ namespace data
             return false;
         }
 
-        static void to_data(N &node, T &&value)
+        template<toolkit::same_as<T> U>
+        static void to_data(N &node, U &&value)
         {
-            node = static_cast<floating_point_type>(std::forward<T>(value));
+            node = static_cast<floating_point_type>(std::forward<U>(value));
         }
     };
 
@@ -468,9 +470,10 @@ namespace data
             return false;
         }
 
-        static void to_data(N &node, T &&value)
+        template<toolkit::same_as<T> U>
+        static void to_data(N &node, U &&value)
         {
-            node = static_cast<integer_type>(std::forward<T>(value));
+            node = static_cast<integer_type>(std::forward<U>(value));
         }
     };
 
