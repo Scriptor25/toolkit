@@ -20,9 +20,7 @@ static int socket_close(const int fd)
     return closesocket(fd);
 }
 
-#endif
-
-#if defined(__linux__) || defined(__APPLE__)
+#else
 
 #include <netdb.h>
 #include <unistd.h>
@@ -179,7 +177,12 @@ namespace
             if (auto *s = ssl[fd])
                 return SSL_write(s, buffer, static_cast<int>(count));
 #endif
+
+#if defined(_WIN32)
+            return static_cast<int>(::send(fd, reinterpret_cast<const char *>(buffer), count, 0));
+#else
             return static_cast<int>(::send(fd, buffer, count, 0));
+#endif
         }
 
         int recv(const int fd, void *buffer, const size_t count) override
@@ -188,7 +191,12 @@ namespace
             if (auto *s = ssl[fd])
                 return SSL_read(s, buffer, static_cast<int>(count));
 #endif
+
+#if defined(_WIN32)
+            return static_cast<int>(::recv(fd, reinterpret_cast<char *>(buffer), count, 0));
+#else
             return static_cast<int>(::recv(fd, buffer, count, 0));
+#endif
         }
 
 #if defined(_WIN32)
