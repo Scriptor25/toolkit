@@ -1,8 +1,16 @@
 #include <http/client.hxx>
 
+#ifndef NO_TLS
+
 #include <openssl/ssl.h>
 
-#ifdef _WIN32
+#else
+
+#include <stdexcept>
+
+#endif
+
+#if defined(_WIN32)
 
 #include <winsock2.h>
 #include <ws2tcpip.h>
@@ -33,10 +41,11 @@ namespace
     {
         explicit default_transport(bool tls)
         {
-#ifdef _WIN32
+#if defined(_WIN32)
             WSAStartup(MAKEWORD(2, 2), &wsa);
 #endif
 
+#ifndef NO_TLS
             if (tls)
             {
                 ctx = SSL_CTX_new(TLS_client_method());
@@ -44,14 +53,20 @@ namespace
                 SSL_CTX_set_verify(ctx, SSL_VERIFY_PEER, nullptr);
                 SSL_CTX_set_default_verify_paths(ctx);
             }
+#else
+            if (tls)
+                throw std::runtime_error("TLS is disabled");
+#endif
         }
 
         ~default_transport() override
         {
+#ifndef NO_TLS
             if (ctx)
                 SSL_CTX_free(ctx);
+#endif
 
-#ifdef _WIN32
+#if defined(_WIN32)
             WSACleanup();
 #endif
         }
@@ -61,22 +76,26 @@ namespace
 
         default_transport(default_transport &&other) noexcept
         {
-#ifdef _WIN32
+#if defined(_WIN32)
             std::swap(wsa, other.wsa);
 #endif
 
+#ifndef NO_TLS
             std::swap(ctx, other.ctx);
             std::swap(ssl, other.ssl);
+#endif
         }
 
         default_transport &operator=(default_transport &&other) noexcept
         {
-#ifdef _WIN32
+#if defined(_WIN32)
             std::swap(wsa, other.wsa);
 #endif
 
+#ifndef NO_TLS
             std::swap(ctx, other.ctx);
             std::swap(ssl, other.ssl);
+#endif
 
             return *this;
         }
@@ -122,7 +141,8 @@ namespace
             if (fd < 0)
                 return toolkit::make_error("failed to open socket.");
 
-            if (ctx && location.scheme == "https")
+#ifndef NO_TLS
+            if (ctx &&location.scheme == "https")
             {
                 auto *s = SSL_new(ctx);
                 SSL_set_fd(s, fd);
@@ -139,37 +159,46 @@ namespace
 
                 ssl[fd] = s;
             }
+#endif
 
             return fd;
         }
 
         void close(const int fd) override
         {
+#ifndef NO_TLS
             if (auto *s = ssl[fd])
                 SSL_free(s);
+#endif
             socket_close(fd);
         }
 
         int send(const int fd, const void *buffer, const size_t count) override
         {
+#ifndef NO_TLS
             if (auto *s = ssl[fd])
                 return SSL_write(s, buffer, static_cast<int>(count));
+#endif
             return static_cast<int>(::send(fd, buffer, count, 0));
         }
 
         int recv(const int fd, void *buffer, const size_t count) override
         {
+#ifndef NO_TLS
             if (auto *s = ssl[fd])
                 return SSL_read(s, buffer, static_cast<int>(count));
+#endif
             return static_cast<int>(::recv(fd, buffer, count, 0));
         }
 
-#ifdef _WIN32
+#if defined(_WIN32)
         WSADATA wsa{};
 #endif
 
+#ifndef NO_TLS
         SSL_CTX *ctx{};
         std::unordered_map<int, SSL *> ssl;
+#endif
     };
 }
 

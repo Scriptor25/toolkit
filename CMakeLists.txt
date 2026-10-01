@@ -9,6 +9,8 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 option(TOOLKIT_ENABLE_INSTALL "Enable Install Targets" OFF)
 
+option(TOOLKIT_HTTP_NO_TLS "Disable HTTP TLS" ON)
+
 ### CORE ###
 
 file(GLOB_RECURSE CORE_SOURCES src/core/*.cxx)
@@ -40,6 +42,10 @@ target_include_directories(toolkit_http PUBLIC
         $<INSTALL_INTERFACE:${CMAKE_INSTALL_PREFIX}/include>
 )
 target_link_libraries(toolkit_http PUBLIC toolkit_core)
+
+if (${TOOLKIT_HTTP_NO_TLS})
+    target_compile_definitions(toolkit_http PUBLIC NO_TLS)
+endif ()
 
 ### JSON ###
 
