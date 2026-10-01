@@ -20,8 +20,7 @@ namespace http
         virtual int recv(int fd, void *buffer, size_t count) = 0;
     };
 
-    std::unique_ptr<transport> create_default_tcp_transport();
-    std::unique_ptr<transport> create_default_secure_tcp_transport();
+    std::unique_ptr<transport> create_default_transport(bool tls);
 
     class client
     {
