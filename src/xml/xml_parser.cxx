@@ -119,14 +119,20 @@ toolkit::result<xml::node> xml::parser::parse_element(bool skip_start)
                 if (skip('!'))
                 {
                     if (at('-'))
+                    {
                         if (auto res = skip_comment(true); !res)
                             return res;
+                        continue;
+                    }
 
                     if (at('['))
+                    {
                         if (auto res = parse_cdata(true); !res)
                             return res;
+                        continue;
+                    }
 
-                    continue;
+                    return toolkit::make_error("invalid directive");
                 }
 
                 node data;
