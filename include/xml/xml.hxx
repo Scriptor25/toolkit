@@ -22,10 +22,7 @@ namespace xml
     {
         using value_type = std::variant<undefined, boolean, string>;
 
-        explicit attribute()
-            : val()
-        {
-        }
+        explicit attribute();
 
         attribute(const attribute &other) = default;
         attribute &operator=(const attribute &other) = default;
@@ -33,27 +30,13 @@ namespace xml
         attribute(attribute &&other) noexcept = default;
         attribute &operator=(attribute &&other) noexcept = default;
 
-        explicit attribute(const value_type &value)
-            : val(value)
-        {
-        }
+        explicit attribute(const value_type &value);
 
-        attribute &operator=(const value_type &value)
-        {
-            val = value;
-            return *this;
-        }
+        attribute &operator=(const value_type &value);
 
-        explicit attribute(value_type &&value)
-            : val(std::move(value))
-        {
-        }
+        explicit attribute(value_type &&value);
 
-        attribute &operator=(value_type &&value)
-        {
-            val = std::move(value);
-            return *this;
-        }
+        attribute &operator=(value_type &&value);
 
         template<data::primitive<attribute> T>
         attribute(T &&value)
@@ -125,6 +108,8 @@ namespace xml
 
     struct element
     {
+        std::string get_text() const;
+
         std::string tag;
         std::unordered_map<std::string, attribute> attributes;
         std::vector<node> elements;
