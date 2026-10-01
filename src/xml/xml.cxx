@@ -21,7 +21,7 @@ static std::ostream &indent_depth(std::ostream &stream, const std::size_t indent
 static std::ostream &print_attribute_fn(
     std::ostream &stream,
     const std::string &name,
-    const xml::node::value_type &value)
+    const xml::attribute::value_type &value)
 {
     // attributes:
     //  - boolean:  {name}
@@ -46,16 +46,6 @@ static std::ostream &print_attribute_fn(
             stream << ' ' << name << "=\"" << value << '"';
         }
 
-        void operator()(const xml::elements &) const
-        {
-            throw std::runtime_error("invalid attribute value");
-        }
-
-        void operator()(const xml::element &) const
-        {
-            throw std::runtime_error("invalid attribute value");
-        }
-
         std::ostream &stream;
         const std::string &name;
     } visitor
@@ -65,7 +55,6 @@ static std::ostream &print_attribute_fn(
     };
 
     std::visit(visitor, value);
-
     return stream;
 }
 
@@ -89,7 +78,7 @@ static std::ostream &print_fn(std::ostream &stream, const unsigned indent, const
             stream << value;
         }
 
-        void operator()(const xml::elements &value) const
+        void operator()(const xml::vec &value) const
         {
             if (value.empty())
                 return;
@@ -117,11 +106,16 @@ static std::ostream &print_fn(std::ostream &stream, const unsigned indent, const
             }
         }
 
+        void operator()(const xml::map &) const
+        {
+            throw std::runtime_error("map");
+        }
+
         void operator()(const xml::element &value) const
         {
-            const auto &tag = value.at("tag");
-            const auto &attributes = value.at("attributes");
-            const auto &elements = value.at("elements");
+            const auto &tag = value.tag;
+            const auto &attributes = value.attributes;
+            const auto &elements = value.elements;
 
             stream << '<' << tag;
 
@@ -133,7 +127,7 @@ static std::ostream &print_fn(std::ostream &stream, const unsigned indent, const
             else
             {
                 stream << '>';
-                print_fn(stream, indent, *elements);
+                print_fn(stream, indent, elements);
                 stream << "</" << tag << '>';
             }
         }
@@ -147,11 +141,10 @@ static std::ostream &print_fn(std::ostream &stream, const unsigned indent, const
     };
 
     std::visit(visitor, value);
-
     return stream;
 }
 
-std::ostream &data::node_traits<bool, std::string>::print(std::ostream &stream, const xml::node &node)
+std::ostream &data::node_traits<xml::string, xml::element>::print(std::ostream &stream, const xml::node &node)
 {
     const auto indent = stream.width();
 
@@ -160,7 +153,7 @@ std::ostream &data::node_traits<bool, std::string>::print(std::ostream &stream, 
     return print_fn(stream, indent, *node);
 }
 
-std::istream &data::node_traits<bool, std::string>::parse(std::istream &stream, xml::node &node)
+std::istream &data::node_traits<xml::string, xml::element>::parse(std::istream &stream, xml::node &node)
 {
     xml::parser parser(stream);
     if (auto result = parser.parse())

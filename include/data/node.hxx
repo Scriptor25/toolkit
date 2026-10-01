@@ -137,13 +137,13 @@ namespace data
         }
 
         explicit node_base(value_type &&value)
-            : m_Value(std::forward<value_type>(value))
+            : m_Value(std::move(value))
         {
         }
 
         node_base &operator=(value_type &&value)
         {
-            m_Value = value;
+            m_Value = std::move(value);
             return *this;
         }
 

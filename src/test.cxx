@@ -38,25 +38,18 @@ struct data::serializer<xml::node, test_t>
         if (!node.is<xml::element>())
             return false;
 
-        const auto &tag = node["tag"];
-        const auto &attributes = node["attributes"];
+        const auto &element = node.get<xml::element>();
 
-        if (!tag || !attributes)
+        if (element.tag != "test")
             return false;
 
-        if (!tag.is<xml::string>())
-            return false;
-
-        if (!attributes.is<xml::element>())
-            return false;
-
-        if (std::string tag_str; tag >> tag_str, tag_str != "test")
-            return false;
+        const auto &foo = element.attributes.at("foo");
+        const auto &bar = element.attributes.at("bar");
 
         auto ok = true;
 
-        ok &= attributes["foo"] >> value.foo;
-        ok &= attributes["bar"] >> value.bar;
+        ok &= foo >> value.foo;
+        ok &= bar >> value.bar;
 
         return ok;
     }

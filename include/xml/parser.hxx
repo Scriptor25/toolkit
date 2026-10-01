@@ -16,7 +16,7 @@ namespace xml
     protected:
         [[nodiscard]] toolkit::result<node> parse_document();
         [[nodiscard]] toolkit::result<node> parse_element(bool skip_start);
-        [[nodiscard]] toolkit::result<node> parse_attribute();
+        [[nodiscard]] toolkit::result<attribute> parse_attribute();
 
         [[nodiscard]] toolkit::result<> skip_comment(bool skip_start);
 

@@ -31,7 +31,7 @@ toolkit::result<xml::node> xml::parser::parse_document()
             // <? ... ?>
             if (skip('?'))
             {
-                std::unordered_map<std::string, node> attributes;
+                std::unordered_map<std::string, attribute> attributes;
                 while (!skip('?'))
                 {
                     if (skip_whitespace())
@@ -81,7 +81,7 @@ toolkit::result<xml::node> xml::parser::parse_element(bool skip_start)
     while (!(is_whitespace(m_Buffer) || at('>') || at('/')))
         tag += pop();
 
-    std::unordered_map<std::string, node> attributes;
+    std::unordered_map<std::string, attribute> attributes;
     while (!(at('>') || at('/')))
     {
         if (skip_whitespace())
@@ -157,14 +157,14 @@ toolkit::result<xml::node> xml::parser::parse_element(bool skip_start)
     return {
         element
         {
-            { "tag", tag },
-            { "attributes", attributes },
-            { "elements", elements },
+            .tag = std::move(tag),
+            .attributes = std::move(attributes),
+            .elements = std::move(elements),
         }
     };
 }
 
-toolkit::result<xml::node> xml::parser::parse_attribute()
+toolkit::result<xml::attribute> xml::parser::parse_attribute()
 {
     // {<nothing>} -> true
     // ="{value}"
