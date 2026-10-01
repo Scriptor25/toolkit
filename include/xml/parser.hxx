@@ -18,9 +18,9 @@ namespace xml
         [[nodiscard]] toolkit::result<node> parse_element(bool skip_start);
         [[nodiscard]] toolkit::result<node> parse_attribute();
 
-        [[nodiscard]] toolkit::result<> skip_comment();
+        [[nodiscard]] toolkit::result<> skip_comment(bool skip_start);
 
-        [[nodiscard]] toolkit::result<node> parse_cdata();
+        [[nodiscard]] toolkit::result<node> parse_cdata(bool skip_start);
         [[nodiscard]] toolkit::result<string> parse_text(std::string_view end);
         [[nodiscard]] toolkit::result<string> parse_text_no_skip(char end);
 

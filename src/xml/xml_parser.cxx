@@ -116,6 +116,19 @@ toolkit::result<xml::node> xml::parser::parse_element(bool skip_start)
                     break;
                 }
 
+                if (skip('!'))
+                {
+                    if (at('-'))
+                        if (auto res = skip_comment(true); !res)
+                            return res;
+
+                    if (at('['))
+                        if (auto res = parse_cdata(true); !res)
+                            return res;
+
+                    continue;
+                }
+
                 node data;
                 if (auto res = parse_element(true) >> data; !res)
                     return res;
@@ -169,11 +182,11 @@ toolkit::result<xml::node> xml::parser::parse_attribute()
     return { std::move(data) };
 }
 
-toolkit::result<> xml::parser::skip_comment()
+toolkit::result<> xml::parser::skip_comment(const bool skip_start)
 {
     // <!-- ... -->
 
-    if (!skip("<!--"))
+    if (!skip(skip_start ? "--" : "<!--"))
         return toolkit::make_error("invalid comment start");
 
     std::string data;
@@ -183,11 +196,11 @@ toolkit::result<> xml::parser::skip_comment()
     return {};
 }
 
-toolkit::result<xml::node> xml::parser::parse_cdata()
+toolkit::result<xml::node> xml::parser::parse_cdata(const bool skip_start)
 {
     // <![CDATA[ ... ]]>
 
-    if (!skip("<![CDATA["))
+    if (!skip(skip_start ? "[CDATA[" : "<![CDATA["))
         return toolkit::make_error("invalid cdata start");
 
     std::string data;
