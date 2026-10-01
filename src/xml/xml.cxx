@@ -91,28 +91,24 @@ static std::ostream &print_fn(std::ostream &stream, const unsigned indent, const
 
         void operator()(const xml::elements &value) const
         {
+            if (value.empty())
+                return;
+
             if (indent)
             {
                 auto &depth = get_context_depth(stream);
 
-                if (!value.empty())
-                {
-                    stream << '\n';
-                    ++depth;
-                }
+                ++depth;
 
                 for (const auto &it : value)
                 {
-                    indent_depth(stream, indent);
+                    indent_depth(stream << '\n', indent);
 
                     print_fn(stream, indent, *it);
                 }
 
-                if (!value.empty())
-                {
-                    --depth;
-                    indent_depth(stream << '\n', indent);
-                }
+                --depth;
+                indent_depth(stream << '\n', indent);
             }
             else
             {
