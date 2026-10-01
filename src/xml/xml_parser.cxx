@@ -32,7 +32,7 @@ toolkit::result<xml::node> xml::parser::parse_document()
             if (skip('?'))
             {
                 std::unordered_map<std::string, node> attributes;
-                while (!at('?'))
+                while (!skip('?'))
                 {
                     if (skip_whitespace())
                         continue;
