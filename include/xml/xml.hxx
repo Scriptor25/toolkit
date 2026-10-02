@@ -108,6 +108,12 @@ namespace xml
 
     struct element
     {
+        template<typename T>
+        bool operator>>(T &value) const
+        {
+            return data::from_data_fn(*this, value);
+        }
+
         std::string get_text() const;
 
         const element *find(const std::string &key) const;
