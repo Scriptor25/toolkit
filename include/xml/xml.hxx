@@ -110,9 +110,15 @@ namespace xml
     {
         std::string get_text() const;
 
+        const element *find(const std::string &key) const;
+        [[nodiscard]] std::vector<const element *> find_all(const std::string &key) const;
+
         std::string tag;
         std::unordered_map<std::string, attribute> attributes;
-        std::vector<node> elements;
+        std::vector<node> nodes;
+
+        std::vector<const element *> elements;
+        std::unordered_map<std::string, std::vector<const element *>> elements_map;
     };
 
     using vec = node::vec_type;

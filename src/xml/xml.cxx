@@ -115,19 +115,19 @@ static std::ostream &print_fn(std::ostream &stream, const unsigned indent, const
         {
             const auto &tag = value.tag;
             const auto &attributes = value.attributes;
-            const auto &elements = value.elements;
+            const auto &nodes = value.nodes;
 
             stream << '<' << tag;
 
             for (const auto &[name, attribute] : attributes)
                 print_attribute_fn(stream, name, *attribute);
 
-            if (elements.empty())
+            if (nodes.empty())
                 stream << " />";
             else
             {
                 stream << '>';
-                print_fn(stream, indent, elements);
+                print_fn(stream, indent, nodes);
                 stream << "</" << tag << '>';
             }
         }

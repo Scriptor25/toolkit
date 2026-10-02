@@ -95,7 +95,7 @@ toolkit::result<xml::node> xml::parser::parse_element(bool skip_start)
             return res;
     }
 
-    std::vector<node> elements;
+    std::vector<node> nodes;
     if (skip('>'))
     {
         while (true)
@@ -139,7 +139,7 @@ toolkit::result<xml::node> xml::parser::parse_element(bool skip_start)
                 if (auto res = parse_element(true) >> data; !res)
                     return res;
 
-                elements.push_back(std::move(data));
+                nodes.push_back(std::move(data));
             }
             else
             {
@@ -147,19 +147,35 @@ toolkit::result<xml::node> xml::parser::parse_element(bool skip_start)
                 if (auto res = parse_text_no_skip('<') >> data; !res)
                     return res;
 
-                elements.emplace_back(std::move(data));
+                nodes.emplace_back(std::move(data));
             }
         }
     }
     else if (!skip("/>"))
         return toolkit::make_error("invalid element end");
 
+    std::vector<const element *> elements;
+    std::unordered_map<std::string, std::vector<const element *>> elements_map;
+
+    for (const auto &node : nodes)
+    {
+        if (!node.is<element>())
+            continue;
+
+        const auto &e = node.get<element>();
+
+        elements.push_back(&e);
+        elements_map[e.tag].push_back(&e);
+    }
+
     return {
         element
         {
             .tag = std::move(tag),
             .attributes = std::move(attributes),
+            .nodes = std::move(nodes),
             .elements = std::move(elements),
+            .elements_map = std::move(elements_map),
         }
     };
 }
