@@ -7,7 +7,6 @@
 
 #include <iostream>
 #include <istream>
-#include <memory>
 #include <ostream>
 #include <sstream>
 
@@ -18,10 +17,29 @@ http::client::client(transport &t)
 
 static void set_header_if_missing(http::headers_t &headers, const std::string &key, const std::string &val)
 {
-    if (headers.contains(key) || headers.contains(toolkit::lowercase(key)))
-        return;
+    headers.emplace(toolkit::lowercase(key), val);
+}
 
-    headers.emplace(key, val);
+template<typename writefn>
+toolkit::result<> write_all(std::span<const char> data, writefn &&write)
+{
+    while (!data.empty())
+    {
+        const auto len = write(data);
+
+        if (len < 0)
+            return toolkit::make_error("failed to write data.");
+
+        if (len == 0)
+            return toolkit::make_error("connection closed.");
+
+        if (static_cast<size_t>(len) > data.size())
+            return toolkit::make_error("invalid write result.");
+
+        data = data.subspan(static_cast<size_t>(len));
+    }
+
+    return {};
 }
 
 toolkit::result<> http::client::fetch(request_t request, response_t &response) const
@@ -37,9 +55,9 @@ toolkit::result<> http::client::fetch(request_t request, response_t &response) c
         },
         fd);
 
-    set_header_if_missing(request.headers, "Host", request.location.host);
-    set_header_if_missing(request.headers, "Connection", "close");
-    set_header_if_missing(request.headers, "Accept-Encoding", "identity");
+    set_header_if_missing(request.headers, "host", request.location.host);
+    set_header_if_missing(request.headers, "connection", "close");
+    set_header_if_missing(request.headers, "accept-encoding", "identity");
 
     std::stringstream packet;
     packet << request.method << ' ' << request.location.pathname << ' ' << "HTTP/1.1" << EOL;
@@ -47,8 +65,8 @@ toolkit::result<> http::client::fetch(request_t request, response_t &response) c
         packet << key << ": " << val << EOL;
     packet << EOL;
 
-    if (write(fd, packet.str()) < 0)
-        return toolkit::make_error("failed to send header.");
+    if (auto res = write_all(packet.str(), [this, fd](auto data) { return write(fd, data); }); !res)
+        return toolkit::make_error("failed to send header: {}", res.error());
 
     char chunk[4096];
 
