@@ -13,9 +13,7 @@ toolkit::result<> http::parse_status(
     stream >> http_version;
 
     if (http_version != "HTTP/1.1")
-    {
         return toolkit::make_error("invalid http version '{}'.", http_version);
-    }
 
     stream >> code;
     toolkit::get_line(stream, message, EOL);
@@ -24,7 +22,7 @@ toolkit::result<> http::parse_status(
     return {};
 }
 
-void http::parse_headers(std::istream &stream, headers_t &headers)
+toolkit::result<> http::parse_headers(std::istream &stream, headers_t &headers)
 {
     headers.clear();
 
@@ -32,15 +30,11 @@ void http::parse_headers(std::istream &stream, headers_t &headers)
     while (toolkit::get_line(stream, line, EOL))
     {
         if (line.empty())
-        {
-            break;
-        }
+            return toolkit::make_error("empty header line.");
 
         const auto colon = line.find(':');
         if (colon == std::string::npos)
-        {
-            continue;
-        }
+            return toolkit::make_error("missing colon in header line.");
 
         auto key = line.substr(0, colon);
         auto val = line.substr(colon + 1);
@@ -48,8 +42,12 @@ void http::parse_headers(std::istream &stream, headers_t &headers)
         key = toolkit::trim(key);
         val = toolkit::trim(val);
 
-        headers.emplace(toolkit::lowercase(key), std::move(val));
+        auto inserted = headers.emplace(toolkit::lowercase(key), std::move(val)).second;
+        if (!inserted)
+            return toolkit::make_error("duplicate header entry '{}' with value '{}'.", key, val);
     }
+
+    return {};
 }
 
 std::ostream &operator<<(std::ostream &stream, const http::method method)

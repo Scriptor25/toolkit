@@ -34,8 +34,6 @@ namespace http
         [[nodiscard]] int read(int fd, std::span<char> buffer) const;
         [[nodiscard]] int write(int fd, std::span<const char> buffer) const;
 
-        [[nodiscard]] toolkit::result<> read_until(int fd, std::string &dst, const char *delimiter) const;
-
         transport &transport_;
     };
 }

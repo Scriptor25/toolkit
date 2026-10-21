@@ -3,8 +3,11 @@
 #include <http/url.hxx>
 
 #include <toolkit/defer.hxx>
+#include <toolkit/result.hxx>
 #include <toolkit/string.hxx>
 
+#include <charconv>
+#include <ios>
 #include <iostream>
 #include <istream>
 #include <ostream>
@@ -42,6 +45,204 @@ toolkit::result<> write_all(std::span<const char> data, writefn &&write)
     return {};
 }
 
+namespace
+{
+    class buffered_reader
+    {
+    public:
+        buffered_reader(http::transport &transport, int fd)
+            : transport_(transport), fd_(fd)
+        {
+        }
+
+        toolkit::result<std::string> read_line()
+        {
+            std::string line;
+
+            while (true)
+            {
+                const auto end = buffer_.find("\r\n", offset_);
+                if (end != std::string::npos)
+                {
+                    line.append(buffer_, offset_, end - offset_);
+                    offset_ = end + 2;
+                    compact();
+                    return line;
+                }
+
+                if (offset_ < buffer_.size())
+                {
+                    line.append(buffer_, offset_, buffer_.size() - offset_);
+                    offset_ = buffer_.size();
+                }
+
+                if (auto res = fill(); !res)
+                    return res;
+
+                if (eof_)
+                    return toolkit::make_error("unexpected EOF while reading line.");
+            }
+        }
+
+        toolkit::result<> read_exact(size_t count, std::ostream *destination)
+        {
+            while (count > 0)
+            {
+                if (available() == 0)
+                {
+                    if (auto res = fill(); !res)
+                        return res;
+
+                    if (eof_)
+                        return toolkit::make_error("unexpected EOF while reading body.");
+                }
+
+                const auto len = std::min(count, available());
+
+                if (destination)
+                {
+                    destination->write(buffer_.data() + offset_, static_cast<std::streamsize>(len));
+
+                    if (!*destination)
+                        return toolkit::make_error("failed to write response body.");
+                }
+
+                offset_ += len;
+                count -= len;
+                compact();
+            }
+
+            return {};
+        }
+
+        toolkit::result<> read_to_eof(std::ostream *destination)
+        {
+            while (true)
+            {
+                const auto len = available();
+
+                if (len > 0)
+                {
+                    if (destination)
+                    {
+                        destination->write(buffer_.data() + offset_, static_cast<std::streamsize>(len));
+
+                        if (!*destination)
+                            return toolkit::make_error("failed to write response body.");
+                    }
+
+                    offset_ = buffer_.size();
+                    compact();
+                    continue;
+                }
+
+                if (auto res = fill(); !res)
+                    return res;
+
+                if (eof_)
+                    return {};
+            }
+        }
+
+        toolkit::result<> read_chunked(std::ostream *destination)
+        {
+            std::string line;
+
+            while (true)
+            {
+                if (auto res = read_line() >> line; !res)
+                    return res;
+
+                const auto semicolon = line.find(';');
+                const std::string_view size_text(line.data(), semicolon == std::string::npos ? line.size() : semicolon);
+
+                if (size_text.empty())
+                    return toolkit::make_error("empty chunk size.");
+                
+                size_t chunk_size;
+                const auto [end, ec] = std::from_chars(size_text.data(), size_text.data() + size_text.size(), chunk_size, 16);
+
+                if (ec != std::errc() || end != size_text.data() + size_text.size())
+                    return toolkit::make_error("invalid chunk size '{}'.", size_text);
+
+                if (chunk_size == 0)
+                {
+                    while (true)
+                    {
+                        if (auto res = read_line() >> line; !res)
+                            return res;
+                        
+                        if (line.empty())
+                            return {};
+                    }
+                }
+
+                if (auto res = read_exact(chunk_size, destination); !res)
+                    return res;
+
+                if (auto res = read_line() >> line; !res)
+                    return res;
+                
+                if (!line.empty())
+                    return toolkit::make_error("missing CRLF after chunk data.");
+            }
+        }
+    
+    private:
+        size_t available() const
+        {
+            return buffer_.size() - offset_;
+        }
+
+        toolkit::result<> fill()
+        {
+            if (eof_)
+                return {};
+            
+            std::array<char, 4096> chunk{};
+
+            const auto len = transport_.recv(fd_, chunk.data(), chunk.size());
+
+            if (len < 0)
+                return toolkit::make_error("failed to read data.");
+
+            if (len == 0)
+            {
+                eof_ = true;
+                return {};
+            }
+
+            if (static_cast<size_t>(len) > chunk.size())
+                return toolkit::make_error("invalid read result.");
+
+            buffer_.append(chunk.data(), static_cast<size_t>(len));
+            return {};
+        }
+
+        void compact()
+        {
+            if (offset_ == buffer_.size())
+            {
+                buffer_.clear();
+                offset_ = 0;
+            }
+            else if (offset_ > 4096)
+            {
+                buffer_.erase(0, offset_);
+                offset_ = 0;
+            }
+        }
+
+    private:
+        http::transport &transport_;
+        int fd_;
+
+        std::string buffer_;
+        size_t offset_ = 0;
+        bool eof_ = false;
+    };
+}
+
 toolkit::result<> http::client::fetch(request_t request, response_t &response) const
 {
     int fd;
@@ -66,68 +267,112 @@ toolkit::result<> http::client::fetch(request_t request, response_t &response) c
     packet << EOL;
 
     if (auto res = write_all(packet.str(), [this, fd](auto data) { return write(fd, data); }); !res)
-        return toolkit::make_error("failed to send header: {}", res.error());
-
-    char chunk[4096];
+        return toolkit::make_error("failed to write request headers: {}", res.error());
 
     if (request.body)
     {
-        size_t count = 0;
+        std::array<char, 4096> chunk{};
 
         while (true)
         {
-            request.body->read(chunk, sizeof(chunk));
-            const size_t len = request.body->gcount();
+            request.body->read(chunk.data(), chunk.size());
+            const auto count = request.body->gcount();
 
-            if (len <= 0)
+            if (count > 0)
+            {
+                if (auto res = write_all(chunk, [this, fd](auto data) { return write(fd, data); }); !res)
+                    return toolkit::make_error("failed to write request body: {}", res.error());
+            }
+
+            if (request.body->eof())
                 break;
 
-            if (write(fd, { chunk, len }) < 0)
-                return toolkit::make_error("failed to send chunk.");
-
-            count += len;
+            if (!*request.body)
+                return toolkit::make_error("failed to read request body.");
         }
     }
 
-    std::string header_block;
-    if (auto res = read_until(fd, header_block, EOL2); !res)
-        return toolkit::make_error("failed to read header block: {}", res.error());
+    buffered_reader reader(transport_, fd);
 
-    auto headers_end = header_block.find(EOL2);
-    auto headers = header_block.substr(0, headers_end);
-    auto body_prefetch = header_block.substr(headers_end + 4);
-
-    std::istringstream headers_stream(headers);
-
-    std::string status_line;
-    toolkit::get_line(headers_stream, status_line, EOL);
-
-    std::istringstream status_stream(status_line);
-    if (auto res = parse_status(status_stream, response.code, response.message); !res)
-        return toolkit::make_error("failed to parse status line: {}", res.error());
-
-    parse_headers(headers_stream, response.headers);
-
-    auto content_length = ~size_t();
-    if (auto it = response.headers.find("content-length"); it != response.headers.end())
-        if (auto res = toolkit::parse_string<size_t>(it->second) >> content_length; !res)
-            return res;
-
-    if (response.body)
-        response.body->write(body_prefetch.data(), static_cast<long>(body_prefetch.size()));
-
-    auto count = body_prefetch.size();
-    while (content_length == ~size_t() || count < content_length)
+    while (true)
     {
-        auto len = read(fd, chunk);
-        if (len <= 0)
+        std::string status_line;
+        if (auto res = reader.read_line() >> status_line; !res)
+            return toolkit::make_error("failed to read status line: {}", res.error());
+
+        std::istringstream status_stream(status_line + EOL);
+        if (auto res = parse_status(status_stream, response.code, response.message); !res)
+            return toolkit::make_error("failed to parse status line: {}", res.error());
+
+        std::string headers_text;
+        std::string line;
+
+        while (true)
+        {
+            if (auto res = reader.read_line() >> line; !res)
+                return toolkit::make_error("failed to read response headers: {}", res.error());
+
+            if (line.empty())
+                break;
+
+            headers_text += line;
+            headers_text += EOL;
+        }
+
+        headers_text += EOL;
+
+        std::istringstream headers_stream(headers_text);
+        if (auto res = parse_headers(headers_stream, response.headers); !res)
+            return toolkit::make_error("failed to parse headers: {}", res.error());
+
+        if (!is_directive(response.code) || response.code == status_code::switching_protocols)
             break;
-
-        if (response.body)
-            response.body->write(chunk, len);
-
-        count += len;
     }
+
+    const auto status = static_cast<int>(response.code);
+
+    const auto body_forbidden = request.method == method::head || (status >= 100 && status < 200) || response.code == status_code::no_content || response.code == status_code::reset_connection || response.code == status_code::not_modified;
+
+    if (body_forbidden)
+        return {};
+
+    const auto transfer_it = response.headers.find("transfer-encoding");
+    const auto length_it = response.headers.find("content-length");
+
+    if (transfer_it != response.headers.end())
+    {
+        const auto encoding = toolkit::lowercase(toolkit::trim(transfer_it->second));
+
+        if (encoding != "chunked")
+            return toolkit::make_error("unsupported transfer-encoding '{}'.", encoding);
+
+        if (length_it != response.headers.end())
+            return toolkit::make_error("response contains both transfer-encoding and content-length headers.");
+
+        if (auto res = reader.read_chunked(response.body); !res)
+            return toolkit::make_error("failed to read chunked response body: {}", res.error());
+
+        return {};
+    }
+
+    if (length_it != response.headers.end())
+    {
+        size_t content_length = 0;
+        const auto &text = length_it->second;
+
+        const auto [end, ec] = std::from_chars(text.data(), text.data() + text.size(), content_length);
+
+        if (ec != std::errc() || end != text.data() + text.size())
+            return toolkit::make_error("invalid content-length header '{}'.", text);
+
+        if (auto res = reader.read_exact(content_length, response.body); !res)
+            return toolkit::make_error("failed to read response body: {}", res.error());
+
+        return {};
+    }
+
+    if (auto res = reader.read_to_eof(response.body); !res)
+        return toolkit::make_error("failed to read response body: {}", res.error());
 
     return {};
 }
@@ -174,20 +419,4 @@ int http::client::read(const int fd, const std::span<char> buffer) const
 int http::client::write(const int fd, const std::span<const char> buffer) const
 {
     return transport_.send(fd, buffer.data(), buffer.size());
-}
-
-toolkit::result<> http::client::read_until(const int fd, std::string &dst, const char *delimiter) const
-{
-    char chunk[1024];
-
-    while (dst.find(delimiter) == std::string::npos)
-    {
-        const auto len = read(fd, chunk);
-        if (len <= 0)
-            return toolkit::make_error("failed to read chunk.");
-
-        dst.insert(dst.end(), chunk, chunk + len);
-    }
-
-    return {};
 }
