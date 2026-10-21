@@ -3,8 +3,11 @@
 #include <toml/toml.hxx>
 #include <xml/xml.hxx>
 
+#include <http/client.hxx>
+
 #include <toolkit/result.hxx>
 
+#include <iostream>
 #include <sstream>
 
 struct test_t
@@ -80,4 +83,20 @@ int main()
     toolkit::result<test_t> x;
     toml::integer y;
     x.extract(&test_t::foo) >> y;
+
+    auto transport = http::create_default_transport(false);
+    http::client client(*transport);
+
+    std::ostringstream http_stream(std::ios::binary);
+    http::response_t response
+    {
+        .body = &http_stream,
+    };
+    if (auto res = client.fetch_with_redirects({
+        .method = http::method::get,
+        .location = http::url::parse("http://example.com"),
+    }, response); !res)
+        std::cerr << res.error() << std::endl;
+    else
+        std::cerr << response.message << " (" << response.code << "):\n" << http_stream.str() << std::endl;
 }

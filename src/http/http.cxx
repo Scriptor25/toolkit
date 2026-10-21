@@ -30,7 +30,7 @@ toolkit::result<> http::parse_headers(std::istream &stream, headers_t &headers)
     while (toolkit::get_line(stream, line, EOL))
     {
         if (line.empty())
-            return toolkit::make_error("empty header line.");
+            break;
 
         const auto colon = line.find(':');
         if (colon == std::string::npos)
