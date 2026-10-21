@@ -80,11 +80,6 @@ target_include_directories(toolkit_xml PUBLIC
 )
 target_link_libraries(toolkit_xml PUBLIC toolkit_core)
 
-### TEST ###
-
-add_executable(test src/test.cxx)
-target_link_libraries(test PRIVATE toolkit_core toolkit_args toolkit_http toolkit_json toolkit_toml toolkit_xml)
-
 ### INSTALL ###
 
 if (TOOLKIT_ENABLE_INSTALL)
