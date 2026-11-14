@@ -446,6 +446,12 @@ namespace data
                 return true;
             }
 
+            if (integer_type val; node >> val)
+            {
+                value = static_cast<T>(val);
+                return true;
+            }
+
             return false;
         }
 
