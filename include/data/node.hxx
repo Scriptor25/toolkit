@@ -433,7 +433,12 @@ namespace data
                 [&key]<typename T>(T &value) -> const node_base &
                 {
                     if constexpr (toolkit::same_as<T, map_type>)
-                        return value.contains(key) ? value.at(key) : undefined;
+                    {
+                        const auto it = value.find(key);
+                        if (it == value.end())
+                            return undefined;
+                        return it->second;
+                    }
                     else if constexpr (toolkit::same_as<T, undefined_type>)
                         return undefined;
                     else
