@@ -425,7 +425,7 @@ namespace data
                 return true;
             }
 
-            if constexpr (floating_point<N, T>)
+            if constexpr (std::floating_point<std::decay_t<T>>)
             {
                 if (integer_type val; node >> val)
                 {
