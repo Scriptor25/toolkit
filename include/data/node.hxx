@@ -248,6 +248,29 @@ namespace data
                 m_Value);
         }
 
+        iterator find(const char *key)
+        {
+            return find(std::string(key));
+        }
+
+        iterator find(const std::string_view key)
+        {
+            return find(std::string(key));
+        }
+
+        iterator find(const std::string &key)
+        {
+            return std::visit(
+                [&key]<typename T>(T &value) -> iterator
+                {
+                    if constexpr (toolkit::same_as<T, map_type>)
+                        return iterator(value.find(key));
+                    else
+                        throw std::runtime_error("type does not have `find(std::string)`");
+                },
+                m_Value);
+        }
+
         [[nodiscard]] const_iterator begin() const
         {
             return std::visit(
@@ -270,6 +293,29 @@ namespace data
                         return const_iterator(value.end());
                     else
                         throw std::runtime_error("type does not have `end() const`");
+                },
+                m_Value);
+        }
+
+        [[nodiscard]] const_iterator find(const char *key) const
+        {
+            return find(std::string(key));
+        }
+
+        [[nodiscard]] const_iterator find(const std::string_view key) const
+        {
+            return find(std::string(key));
+        }
+
+        [[nodiscard]] const_iterator find(const std::string &key) const
+        {
+            return std::visit(
+                [&key]<typename T>(T &value) -> const_iterator
+                {
+                    if constexpr (toolkit::same_as<T, map_type>)
+                        return const_iterator(value.find(key));
+                    else
+                        throw std::runtime_error("type does not have `find(std::string) const`");
                 },
                 m_Value);
         }
@@ -342,6 +388,16 @@ namespace data
                 m_Value);
         }
 
+        node_base &operator[](const char *key)
+        {
+            return operator[](std::string(key));
+        }
+
+        node_base &operator[](const std::string_view key)
+        {
+            return operator[](std::string(key));
+        }
+
         node_base &operator[](const std::string &key)
         {
             static node_base undefined;
@@ -354,9 +410,19 @@ namespace data
                     else if constexpr (toolkit::same_as<T, undefined_type>)
                         return undefined;
                     else
-                        throw std::runtime_error("type does not have `operator[](Key)`");
+                        throw std::runtime_error("type does not have `operator[](std::string)`");
                 },
                 m_Value);
+        }
+
+        const node_base &operator[](const char *key) const
+        {
+            return operator[](std::string(key));
+        }
+
+        const node_base &operator[](const std::string_view key) const
+        {
+            return operator[](std::string(key));
         }
 
         const node_base &operator[](const std::string &key) const
@@ -371,7 +437,7 @@ namespace data
                     else if constexpr (toolkit::same_as<T, undefined_type>)
                         return undefined;
                     else
-                        throw std::runtime_error("type does not have `operator[](Key) const`");
+                        throw std::runtime_error("type does not have `operator[](std::string) const`");
                 },
                 m_Value);
         }
