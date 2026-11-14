@@ -425,6 +425,15 @@ namespace data
                 return true;
             }
 
+            if constexpr (floating_point<N, T>)
+            {
+                if (integer_type val; node >> val)
+                {
+                    value = static_cast<T>(val);
+                    return true;
+                }
+            }
+
             return false;
         }
 
