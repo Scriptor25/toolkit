@@ -77,7 +77,7 @@ namespace args
             const manifest &man,
             std::span<const std::string> args);
 
-        [[nodiscard]] std::string file() const;
+        [[nodiscard]] const std::string &file() const;
 
         [[nodiscard]] bool limited() const;
         [[nodiscard]] std::size_t limit() const;

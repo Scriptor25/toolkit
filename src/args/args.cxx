@@ -333,7 +333,7 @@ toolkit::result<args::context> args::context::parse(
     return ctx;
 }
 
-std::string args::context::file() const
+const std::string &args::context::file() const
 {
     return file_;
 }
