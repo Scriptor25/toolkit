@@ -45,6 +45,10 @@ target_link_libraries(toolkit_http PUBLIC toolkit_core)
 
 if (${TOOLKIT_HTTP_NO_TLS})
     target_compile_definitions(toolkit_http PUBLIC NO_TLS)
+else ()
+    find_package(OpenSSL REQUIRED)
+
+    target_link_libraries(toolkit_http PUBLIC OpenSSL::SSL)
 endif ()
 
 ### JSON ###
