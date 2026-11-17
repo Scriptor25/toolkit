@@ -124,7 +124,7 @@ namespace http
         std::istream &stream,
         status_code &code,
         std::string &message);
-    void parse_headers(std::istream &stream, headers_t &headers);
+    [[nodiscard]] toolkit::result<> parse_headers(std::istream &stream, headers_t &headers);
 }
 
 std::ostream &operator<<(std::ostream &stream, http::method method);

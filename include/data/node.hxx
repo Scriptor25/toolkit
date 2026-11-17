@@ -248,6 +248,29 @@ namespace data
                 m_Value);
         }
 
+        iterator find(const char *key)
+        {
+            return find(std::string(key));
+        }
+
+        iterator find(const std::string_view key)
+        {
+            return find(std::string(key));
+        }
+
+        iterator find(const std::string &key)
+        {
+            return std::visit(
+                [&key]<typename T>(T &value) -> iterator
+                {
+                    if constexpr (toolkit::same_as<T, map_type>)
+                        return iterator(value.find(key));
+                    else
+                        throw std::runtime_error("type does not have `find(std::string)`");
+                },
+                m_Value);
+        }
+
         [[nodiscard]] const_iterator begin() const
         {
             return std::visit(
@@ -274,10 +297,33 @@ namespace data
                 m_Value);
         }
 
+        [[nodiscard]] const_iterator find(const char *key) const
+        {
+            return find(std::string(key));
+        }
+
+        [[nodiscard]] const_iterator find(const std::string_view key) const
+        {
+            return find(std::string(key));
+        }
+
+        [[nodiscard]] const_iterator find(const std::string &key) const
+        {
+            return std::visit(
+                [&key]<typename T>(T &value) -> const_iterator
+                {
+                    if constexpr (toolkit::same_as<T, map_type>)
+                        return const_iterator(value.find(key));
+                    else
+                        throw std::runtime_error("type does not have `find(std::string) const`");
+                },
+                m_Value);
+        }
+
         [[nodiscard]] bool empty() const
         {
             return std::visit(
-                []<typename T>(T &value) -> size_t
+                []<typename T>(T &value) -> bool
                 {
                     if constexpr (toolkit::same_as<T, vec_type> || toolkit::same_as<T, map_type>)
                         return value.empty();
@@ -289,10 +335,10 @@ namespace data
                 m_Value);
         }
 
-        [[nodiscard]] size_t size() const
+        [[nodiscard]] std::size_t size() const
         {
             return std::visit(
-                []<typename T>(T &value) -> size_t
+                []<typename T>(T &value) -> std::size_t
                 {
                     if constexpr (toolkit::same_as<T, vec_type> || toolkit::same_as<T, map_type>)
                         return value.size();
@@ -304,7 +350,17 @@ namespace data
                 m_Value);
         }
 
-        node_base &operator[](size_t index)
+        node_base &operator[](const int index)
+        {
+            return operator[](static_cast<std::size_t>(index));
+        }
+
+        node_base &operator[](const unsigned index)
+        {
+            return operator[](static_cast<std::size_t>(index));
+        }
+
+        node_base &operator[](std::size_t index)
         {
             static node_base undefined;
 
@@ -320,12 +376,22 @@ namespace data
                     else if constexpr (toolkit::same_as<T, undefined_type>)
                         return undefined;
                     else
-                        throw std::runtime_error("type does not have `operator[](size_t)`");
+                        throw std::runtime_error("type does not have `operator[](std::size_t)`");
                 },
                 m_Value);
         }
 
-        const node_base &operator[](size_t index) const
+        const node_base &operator[](const int index) const
+        {
+            return operator[](static_cast<std::size_t>(index));
+        }
+
+        const node_base &operator[](const unsigned index) const
+        {
+            return operator[](static_cast<std::size_t>(index));
+        }
+
+        const node_base &operator[](std::size_t index) const
         {
             static const node_base undefined;
 
@@ -337,9 +403,19 @@ namespace data
                     else if constexpr (toolkit::same_as<T, undefined_type>)
                         return undefined;
                     else
-                        throw std::runtime_error("type does not have `operator[](size_t) const`");
+                        throw std::runtime_error("type does not have `operator[](std::size_t) const`");
                 },
                 m_Value);
+        }
+
+        node_base &operator[](const char *key)
+        {
+            return operator[](std::string(key));
+        }
+
+        node_base &operator[](const std::string_view key)
+        {
+            return operator[](std::string(key));
         }
 
         node_base &operator[](const std::string &key)
@@ -354,9 +430,19 @@ namespace data
                     else if constexpr (toolkit::same_as<T, undefined_type>)
                         return undefined;
                     else
-                        throw std::runtime_error("type does not have `operator[](Key)`");
+                        throw std::runtime_error("type does not have `operator[](std::string)`");
                 },
                 m_Value);
+        }
+
+        const node_base &operator[](const char *key) const
+        {
+            return operator[](std::string(key));
+        }
+
+        const node_base &operator[](const std::string_view key) const
+        {
+            return operator[](std::string(key));
         }
 
         const node_base &operator[](const std::string &key) const
@@ -367,11 +453,16 @@ namespace data
                 [&key]<typename T>(T &value) -> const node_base &
                 {
                     if constexpr (toolkit::same_as<T, map_type>)
-                        return value.contains(key) ? value.at(key) : undefined;
+                    {
+                        const auto it = value.find(key);
+                        if (it == value.end())
+                            return undefined;
+                        return it->second;
+                    }
                     else if constexpr (toolkit::same_as<T, undefined_type>)
                         return undefined;
                     else
-                        throw std::runtime_error("type does not have `operator[](Key) const`");
+                        throw std::runtime_error("type does not have `operator[](std::string) const`");
                 },
                 m_Value);
         }
@@ -425,6 +516,15 @@ namespace data
                 return true;
             }
 
+            if constexpr (std::floating_point<std::decay_t<T>>)
+            {
+                if (integer_type val; node >> val)
+                {
+                    value = static_cast<T>(val);
+                    return true;
+                }
+            }
+
             return false;
         }
 
@@ -441,6 +541,12 @@ namespace data
         static bool from_data(const N &node, T &value)
         {
             if (floating_point_type val; node >> val)
+            {
+                value = static_cast<T>(val);
+                return true;
+            }
+
+            if (integer_type val; node >> val)
             {
                 value = static_cast<T>(val);
                 return true;

@@ -53,7 +53,20 @@ toolkit::result<xml::node> xml::parser::parse_document()
 
             // <! ... >
             if (skip('!'))
+            {
+                if (skip('-'))
+                {
+                    if (!skip('-'))
+                        return toolkit::make_error("invalid comment start");
+
+                    while (!skip("-->"))
+                        get();
+
+                    continue;
+                }
+
                 return toolkit::make_error("not yet implemented");
+            }
 
             skip_start = true;
             break;

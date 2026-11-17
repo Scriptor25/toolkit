@@ -356,7 +356,7 @@ toolkit::result<toml::node> toml::parser::parse_array()
 
     while (!at(']'))
     {
-        if (skip_whitespace() || skip_eol())
+        if (skip_whitespace() || skip_eol() || skip_comment())
             continue;
 
         auto value_exp = parse_value();
@@ -388,7 +388,7 @@ toolkit::result<toml::node> toml::parser::parse_table()
 
     while (!at('}'))
     {
-        if (skip_whitespace() || skip_eol())
+        if (skip_whitespace() || skip_eol() || skip_comment())
             continue;
 
         auto key_exp = parse_key();
